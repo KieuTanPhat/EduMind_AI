@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api } from '../lib/api'
 import type { AuthResponse, CurrentUser, RegisterResponse } from '../types'
 
@@ -29,6 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null
     }
   })
+
+  useEffect(() => {
+    if (!localStorage.getItem('edumind.accessToken')) return
+    api.get<CurrentUser>('/auth/me').then(response => setUser(response.data)).catch(() => undefined)
+  }, [])
 
   const value = useMemo<AuthContextValue>(() => ({
     user,
