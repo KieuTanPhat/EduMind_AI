@@ -17,13 +17,13 @@ public sealed class SmtpEmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task SendEmailVerificationAsync(string recipientEmail, string recipientName, string token, CancellationToken cancellationToken)
+    public async Task<string?> SendEmailVerificationAsync(string recipientEmail, string recipientName, string token, CancellationToken cancellationToken)
     {
         var verificationUrl = $"{_options.FrontendBaseUrl.TrimEnd('/')}/verify-email?token={Uri.EscapeDataString(token)}";
         if (string.IsNullOrWhiteSpace(_options.SmtpHost))
         {
             _logger.LogWarning("Email SMTP is not configured. Verification link for {Email}: {VerificationUrl}", recipientEmail, verificationUrl);
-            return;
+            return verificationUrl;
         }
 
         using var client = new SmtpClient(_options.SmtpHost, _options.SmtpPort)
@@ -40,5 +40,6 @@ public sealed class SmtpEmailService : IEmailService
         };
         mail.To.Add(recipientEmail);
         await client.SendMailAsync(mail, cancellationToken);
+        return null;
     }
 }

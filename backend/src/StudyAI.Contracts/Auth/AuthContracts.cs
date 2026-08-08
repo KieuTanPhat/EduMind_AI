@@ -23,7 +23,7 @@ public sealed record AuthResponse(
     string RefreshToken,
     DateTime RefreshTokenExpiresAtUtc);
 
-public sealed record RegisterResponse(Guid UserId, string Email, bool RequiresEmailVerification);
+public sealed record RegisterResponse(Guid UserId, string Email, bool RequiresEmailVerification, string? DevelopmentVerificationUrl);
 
 public sealed record CurrentUserResponse(
     Guid UserId,

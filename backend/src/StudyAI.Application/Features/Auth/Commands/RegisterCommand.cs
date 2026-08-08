@@ -75,7 +75,7 @@ public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Re
         _db.EmailVerificationTokens.Add(new EmailVerificationToken(user.Id, tokenHash, DateTime.UtcNow.AddHours(24)));
         await _db.SaveChangesAsync(cancellationToken);
 
-        await _emailService.SendEmailVerificationAsync(user.Email, $"{user.FirstName} {user.LastName}".Trim(), rawToken, cancellationToken);
-        return new RegisterResponse(user.Id, user.Email, true);
+        var developmentVerificationUrl = await _emailService.SendEmailVerificationAsync(user.Email, $"{user.FirstName} {user.LastName}".Trim(), rawToken, cancellationToken);
+        return new RegisterResponse(user.Id, user.Email, true, developmentVerificationUrl);
     }
 }

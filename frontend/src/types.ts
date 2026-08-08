@@ -10,7 +10,7 @@ export type AuthResponse = {
   refreshTokenExpiresAtUtc: string
 }
 
-export type RegisterResponse = { userId: string; email: string; requiresEmailVerification: boolean }
+export type RegisterResponse = { userId: string; email: string; requiresEmailVerification: boolean; developmentVerificationUrl?: string }
 
 export type CurrentUser = Pick<AuthResponse, 'userId' | 'email' | 'firstName' | 'lastName' | 'roles'> & { isEmailVerified?: boolean; isPlus?: boolean; plusExpiresAtUtc?: string }
 

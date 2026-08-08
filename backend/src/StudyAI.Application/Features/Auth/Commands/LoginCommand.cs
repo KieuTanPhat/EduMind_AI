@@ -14,7 +14,10 @@ public sealed class LoginCommandValidator : AbstractValidator<LoginCommand>
 {
     public LoginCommandValidator()
     {
-        RuleFor(x => x.Request.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.Request.Email)
+            .NotEmpty()
+            .Must(value => value.Equals("admin", StringComparison.OrdinalIgnoreCase) || System.Net.Mail.MailAddress.TryCreate(value, out _))
+            .WithMessage("Enter a valid email or the local admin username.");
         RuleFor(x => x.Request.Password).NotEmpty();
     }
 }
@@ -34,7 +37,9 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResp
 
     public async Task<AuthResponse> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
-        var normalizedEmail = command.Request.Email.Trim().ToUpperInvariant();
+        var normalizedEmail = command.Request.Email.Trim().Equals("admin", StringComparison.OrdinalIgnoreCase)
+            ? "ADMIN@EDUMIND.LOCAL"
+            : command.Request.Email.Trim().ToUpperInvariant();
         var user = await _db.Users
             .Include(x => x.UserRoles)
             .ThenInclude(x => x.Role)
