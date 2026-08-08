@@ -42,6 +42,7 @@ public sealed class SendChatMessageCommandHandler : IRequestHandler<SendChatMess
 
         var userMessage = new ChatMessage(session.Id, "user", content);
         session.Messages.Add(userMessage);
+        _db.ChatMessages.Add(userMessage);
         var history = string.Join("\n", session.Messages.OrderByDescending(x => x.CreatedAtUtc).Take(10).Reverse().Select(message => $"{message.Role}: {message.Content}"));
         var preference = await _db.UserPreferences.AsNoTracking()
             .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
@@ -52,6 +53,7 @@ public sealed class SendChatMessageCommandHandler : IRequestHandler<SendChatMess
 
         var assistantMessage = new ChatMessage(session.Id, "assistant", result.Text);
         session.Messages.Add(assistantMessage);
+        _db.ChatMessages.Add(assistantMessage);
         _db.AiUsageLogs.Add(new AiUsageLog(command.UserId, "chat", result.Model, result.InputTokens, result.OutputTokens));
         await _db.SaveChangesAsync(cancellationToken);
         return new ChatMessageResponse(assistantMessage.Id, session.Id, assistantMessage.Role, assistantMessage.Content, assistantMessage.CreatedAtUtc);
