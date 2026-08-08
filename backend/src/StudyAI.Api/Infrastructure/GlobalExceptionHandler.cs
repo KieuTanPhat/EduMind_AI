@@ -20,9 +20,11 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         {
             ValidationException validationException =>
                 (StatusCodes.Status400BadRequest, "Validation failed.", string.Join(" ", validationException.Errors.Select(x => x.ErrorMessage))),
+            BadRequestException => (StatusCodes.Status400BadRequest, "Bad request.", exception.Message),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict.", exception.Message),
             UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized.", exception.Message),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found.", exception.Message),
+            ExternalServiceException => (StatusCodes.Status503ServiceUnavailable, "AI service unavailable.", exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.", "The server could not complete the request.")
         };
 

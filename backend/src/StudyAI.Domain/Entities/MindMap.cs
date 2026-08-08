@@ -22,4 +22,11 @@ public sealed class MindMap : Entity
     public Document Document { get; private set; } = null!;
 
     public ICollection<MindMapNode> Nodes { get; private set; } = new List<MindMapNode>();
+
+    public void UpdateTitle(string title, string model)
+    {
+        Title = title;
+        Model = model;
+        Touch(DateTime.UtcNow);
+    }
 }

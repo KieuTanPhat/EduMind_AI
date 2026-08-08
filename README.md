@@ -2,7 +2,7 @@
 
 StudyAI is a personalized AI learning platform for documents, summaries, mind maps, flashcards, quizzes and document Q&A.
 
-The project currently contains the Phase 1 backend foundation:
+Phase 2 core learning platform đã được triển khai end-to-end trên nền tảng Phase 1:
 
 - .NET 8 / C# 12 Web API
 - Clean Architecture modular monolith
@@ -13,9 +13,14 @@ The project currently contains the Phase 1 backend foundation:
 - Serilog request logging
 - Swagger with Bearer authentication
 - ProblemDetails-compatible exception handling
-- Hangfire and local file-storage abstractions ready for later phases
+- Local file storage với ownership, validation, download, delete, search và pagination
+- PDF/DOCX/TXT extraction, text cleaning/chunking và document processing status
+- Hangfire scheduler (hoặc inline development scheduler khi Hangfire tắt)
+- Gemini summary, mind map, flashcards, quiz và document-grounded Q&A
+- AI structured JSON validation, result caching và AI usage logging
+- React/TypeScript dashboard, document library và document detail workspace
 
-Read [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) for the product and roadmap overview. The Phase 1 architecture notes are in [docs/architecture/phase-1.md](docs/architecture/phase-1.md).
+Read [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) for the product and roadmap overview. Architecture notes are in [docs/architecture/phase-1.md](docs/architecture/phase-1.md) and [docs/architecture/phase-2.md](docs/architecture/phase-2.md).
 
 ## Repository layout
 
@@ -51,7 +56,18 @@ dotnet ef database update --project backend/src/StudyAI.Infrastructure/StudyAI.I
 dotnet run --project backend/src/StudyAI.Api/StudyAI.Api.csproj
 ```
 
-The API exposes Swagger in Development and a health endpoint at `GET /health`.
+In a second terminal, run the frontend:
+
+```powershell
+cd frontend
+Copy-Item .env.example .env.local
+npm install
+npm run dev
+```
+
+The API exposes Swagger in Development and a health endpoint at `GET /health`. Open the frontend at `http://localhost:5173`.
+
+Set `GEMINI_API_KEY` to enable AI generation. `Hangfire:Enabled` is false by default for a simple local development setup; set it to true when SQL Server-backed Hangfire processing is configured.
 
 To use another SQL Server instance, set `DATABASE_CONNECTION_STRING` or update the local connection string in `appsettings.json`. Do not commit production secrets. The API accepts `JWT_SECRET` and requires at least 32 bytes.
 
@@ -64,3 +80,21 @@ dotnet test StudyAI.sln
 
 The first migration is in `backend/src/StudyAI.Infrastructure/Persistence/Migrations` and should be applied with `dotnet ef database update`; the application does not use `EnsureCreated`.
 
+## Phase 2 API surface
+
+```text
+POST   /api/documents
+GET    /api/documents?search=&page=1&pageSize=20
+GET    /api/documents/{id}
+GET    /api/documents/{id}/status
+GET    /api/documents/{id}/download
+DELETE /api/documents/{id}
+
+POST/GET /api/documents/{id}/summary
+POST/GET /api/documents/{id}/mindmap
+POST/GET /api/documents/{id}/flashcards
+POST/GET /api/documents/{id}/quiz
+POST     /api/documents/{id}/chat/sessions
+GET      /api/documents/{id}/chat/sessions
+POST/GET /api/chat/sessions/{id}/messages
+```

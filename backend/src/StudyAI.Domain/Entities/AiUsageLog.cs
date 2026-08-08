@@ -28,4 +28,6 @@ public sealed class AiUsageLog : Entity
     public bool Succeeded { get; private set; } = true;
 
     public User User { get; private set; } = null!;
+
+    public void MarkFailed() => Succeeded = false;
 }

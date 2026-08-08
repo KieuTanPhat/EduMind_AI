@@ -49,6 +49,10 @@ public sealed class Document : Entity
 
     public ICollection<Quiz> Quizzes { get; private set; } = new List<Quiz>();
 
+    public void SetSummary(Summary summary) => Summary = summary;
+
+    public void SetMindMap(MindMap mindMap) => MindMap = mindMap;
+
     public void MarkProcessing()
     {
         Status = DocumentStatus.Processing;

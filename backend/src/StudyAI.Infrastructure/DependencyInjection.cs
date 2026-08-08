@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using StudyAI.Application.Abstractions;
 using StudyAI.Infrastructure.Authentication;
+using StudyAI.Infrastructure.AI;
 using StudyAI.Infrastructure.Persistence;
+using StudyAI.Infrastructure.Processing;
 using StudyAI.Infrastructure.Storage;
 
 namespace StudyAI.Infrastructure;
@@ -31,6 +33,24 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+        services.Configure<GeminiOptions>(configuration.GetSection(GeminiOptions.SectionName));
+        services.PostConfigure<GeminiOptions>(options =>
+        {
+            options.ApiKey = configuration["GEMINI_API_KEY"] ?? options.ApiKey;
+        });
+        services.AddHttpClient("Gemini", (provider, client) =>
+        {
+            var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : $"{options.BaseUrl}/");
+            client.Timeout = TimeSpan.FromMinutes(2);
+        });
+        services.AddScoped<IAiService, GeminiService>();
+        services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
+        services.AddScoped<IDocumentProcessingJob, DocumentProcessingJob>();
+        services.AddScoped<ITextProcessingService, TextProcessingService>();
+        services.AddScoped<IDocumentTextExtractor, PdfTextExtractor>();
+        services.AddScoped<IDocumentTextExtractor, DocxTextExtractor>();
+        services.AddScoped<IDocumentTextExtractor, TxtTextExtractor>();
 
         if (configuration.GetValue("Hangfire:Enabled", false))
         {
@@ -47,6 +67,11 @@ public static class DependencyInjection
                     DisableGlobalLocks = true
                 }));
             services.AddHangfireServer();
+            services.AddScoped<IDocumentProcessingScheduler, HangfireDocumentProcessingScheduler>();
+        }
+        else
+        {
+            services.AddScoped<IDocumentProcessingScheduler, InlineDocumentProcessingScheduler>();
         }
 
         return services;

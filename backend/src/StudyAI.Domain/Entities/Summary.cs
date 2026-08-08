@@ -20,4 +20,11 @@ public sealed class Summary : Entity
     public string Model { get; private set; } = null!;
 
     public Document Document { get; private set; } = null!;
+
+    public void Update(string content, string model)
+    {
+        Content = content;
+        Model = model;
+        Touch(DateTime.UtcNow);
+    }
 }

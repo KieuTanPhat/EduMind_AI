@@ -33,4 +33,17 @@ public sealed class MindMapNode : Entity
     public MindMapNode? ParentNode { get; private set; }
 
     public ICollection<MindMapNode> Children { get; private set; } = new List<MindMapNode>();
+
+    public void SetPosition(double x, double y)
+    {
+        PositionX = x;
+        PositionY = y;
+        Touch(DateTime.UtcNow);
+    }
+
+    public void SetDescription(string? description)
+    {
+        Description = description;
+        Touch(DateTime.UtcNow);
+    }
 }
