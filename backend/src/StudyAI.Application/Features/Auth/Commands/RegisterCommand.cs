@@ -1,4 +1,6 @@
 using FluentValidation;
+using System.Security.Cryptography;
+using System.Text;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
@@ -8,7 +10,7 @@ using StudyAI.Domain.Entities;
 
 namespace StudyAI.Application.Features.Auth.Commands;
 
-public sealed record RegisterCommand(RegisterRequest Request) : IRequest<AuthResponse>;
+public sealed record RegisterCommand(RegisterRequest Request) : IRequest<RegisterResponse>;
 
 public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
@@ -31,20 +33,20 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
     }
 }
 
-public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
+public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>
 {
     private readonly IApplicationDbContext _db;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly ITokenService _tokenService;
+    private readonly IEmailService _emailService;
 
-    public RegisterCommandHandler(IApplicationDbContext db, IPasswordHasher passwordHasher, ITokenService tokenService)
+    public RegisterCommandHandler(IApplicationDbContext db, IPasswordHasher passwordHasher, IEmailService emailService)
     {
         _db = db;
         _passwordHasher = passwordHasher;
-        _tokenService = tokenService;
+        _emailService = emailService;
     }
 
-    public async Task<AuthResponse> Handle(RegisterCommand command, CancellationToken cancellationToken)
+    public async Task<RegisterResponse> Handle(RegisterCommand command, CancellationToken cancellationToken)
     {
         var email = command.Request.Email.Trim();
         var normalizedEmail = email.ToUpperInvariant();
@@ -68,19 +70,12 @@ public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Au
         user.SetPreference(new UserPreference(user.Id));
         _db.Users.Add(user);
 
-        var refreshToken = _tokenService.GenerateRefreshToken();
-        _db.RefreshTokens.Add(new RefreshToken(user.Id, _tokenService.HashRefreshToken(refreshToken.Token), refreshToken.ExpiresAtUtc));
+        var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var tokenHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
+        _db.EmailVerificationTokens.Add(new EmailVerificationToken(user.Id, tokenHash, DateTime.UtcNow.AddHours(24)));
         await _db.SaveChangesAsync(cancellationToken);
 
-        return new AuthResponse(
-            user.Id,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            new[] { userRole.Name },
-            _tokenService.GenerateAccessToken(user, new[] { userRole.Name }),
-            _tokenService.GetAccessTokenExpiresAtUtc(),
-            refreshToken.Token,
-            refreshToken.ExpiresAtUtc);
+        await _emailService.SendEmailVerificationAsync(user.Email, $"{user.FirstName} {user.LastName}".Trim(), rawToken, cancellationToken);
+        return new RegisterResponse(user.Id, user.Email, true);
     }
 }

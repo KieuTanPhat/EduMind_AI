@@ -23,9 +23,14 @@ public sealed record AuthResponse(
     string RefreshToken,
     DateTime RefreshTokenExpiresAtUtc);
 
+public sealed record RegisterResponse(Guid UserId, string Email, bool RequiresEmailVerification);
+
 public sealed record CurrentUserResponse(
     Guid UserId,
     string Email,
     string FirstName,
     string LastName,
-    IReadOnlyCollection<string> Roles);
+    IReadOnlyCollection<string> Roles,
+    bool IsEmailVerified,
+    bool IsPlus,
+    DateTime? PlusExpiresAtUtc);

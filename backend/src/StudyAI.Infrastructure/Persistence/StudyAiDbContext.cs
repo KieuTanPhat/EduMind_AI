@@ -13,6 +13,7 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentCategory> DocumentCategories => Set<DocumentCategory>();
     public DbSet<Summary> Summaries => Set<Summary>();
@@ -33,6 +34,8 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<PlusRequest> PlusRequests => Set<PlusRequest>();
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,6 +51,18 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
             entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
             entity.HasIndex(x => x.NormalizedEmail).IsUnique();
+            entity.Property(x => x.IsEmailVerified).HasDefaultValue(false);
+            entity.Property(x => x.IsPlus).HasDefaultValue(false);
+        });
+
+        modelBuilder.Entity<EmailVerificationToken>(entity =>
+        {
+            entity.ToTable("EmailVerificationTokens");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.HasIndex(x => new { x.UserId, x.ExpiresAtUtc });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -301,6 +316,31 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.Property(x => x.MetadataJson).HasColumnType("nvarchar(max)");
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PlusRequest>(entity =>
+        {
+            entity.ToTable("PlusRequests");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.AmountVnd).HasPrecision(18, 2);
+            entity.Property(x => x.TransferContent).HasMaxLength(300).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(30).IsRequired();
+            entity.Property(x => x.Note).HasMaxLength(1000);
+            entity.HasIndex(x => new { x.UserId, x.Status, x.CreatedAtUtc });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SupportTicket>(entity =>
+        {
+            entity.ToTable("SupportTickets");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Subject).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Message).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(30).IsRequired();
+            entity.Property(x => x.AdminReply).HasMaxLength(4000);
+            entity.HasIndex(x => new { x.UserId, x.Status, x.CreatedAtUtc });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

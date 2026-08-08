@@ -27,6 +27,14 @@ public sealed class User : Entity
 
     public bool IsActive { get; private set; } = true;
 
+    public bool IsEmailVerified { get; private set; }
+
+    public bool IsPlus { get; private set; }
+
+    public DateTime? PlusGrantedAtUtc { get; private set; }
+
+    public DateTime? PlusExpiresAtUtc { get; private set; }
+
     public UserPreference? Preference { get; private set; }
 
     public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
@@ -57,5 +65,17 @@ public sealed class User : Entity
     {
         IsActive = false;
         Touch(DateTime.UtcNow);
+    }
+
+    public void VerifyEmail() => IsEmailVerified = true;
+
+    public bool HasActivePlus(DateTime utcNow) => IsPlus && (!PlusExpiresAtUtc.HasValue || PlusExpiresAtUtc.Value > utcNow);
+
+    public void GrantPlus(DateTime utcNow, DateTime? expiresAtUtc = null)
+    {
+        IsPlus = true;
+        PlusGrantedAtUtc = utcNow;
+        PlusExpiresAtUtc = expiresAtUtc;
+        Touch(utcNow);
     }
 }

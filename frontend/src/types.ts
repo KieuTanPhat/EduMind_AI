@@ -10,7 +10,9 @@ export type AuthResponse = {
   refreshTokenExpiresAtUtc: string
 }
 
-export type CurrentUser = Pick<AuthResponse, 'userId' | 'email' | 'firstName' | 'lastName' | 'roles'>
+export type RegisterResponse = { userId: string; email: string; requiresEmailVerification: boolean }
+
+export type CurrentUser = Pick<AuthResponse, 'userId' | 'email' | 'firstName' | 'lastName' | 'roles'> & { isEmailVerified?: boolean; isPlus?: boolean; plusExpiresAtUtc?: string }
 
 export type DocumentItem = {
   id: string
@@ -85,6 +87,8 @@ export type AdminStats = { totalUsers: number; activeUsers: number; totalDocumen
 export type AdminUser = { id: string; email: string; firstName: string; lastName: string; isActive: boolean; roles: string[]; createdAtUtc: string }
 export type AdminDocument = { id: string; originalFileName: string; ownerEmail: string; fileType: string; status: string; fileSizeBytes: number; createdAtUtc: string }
 export type AiUsageSummary = { operation: string; requestCount: number; inputTokens: number; outputTokens: number }
+export type PlusRequestAdmin = { id: string; userId: string; email: string; fullName: string; amountVnd: number; transferContent: string; status: string; note?: string; createdAtUtc: string }
+export type SupportTicket = { id: string; subject: string; message: string; status: string; adminReply?: string; createdAtUtc: string; resolvedAtUtc?: string }
 
 export type ChatSession = { id: string; documentId: string; title: string; createdAtUtc: string }
 export type ChatMessage = { id: string; sessionId: string; role: string; content: string; createdAtUtc: string }

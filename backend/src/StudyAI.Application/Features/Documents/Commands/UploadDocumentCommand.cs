@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
 using StudyAI.Application.Common.Exceptions;
 using StudyAI.Contracts.Documents;
@@ -45,6 +46,16 @@ public sealed class UploadDocumentCommandHandler : IRequestHandler<UploadDocumen
 
     public async Task<UploadDocumentResponse> Handle(UploadDocumentCommand command, CancellationToken cancellationToken)
     {
+        var user = await _db.Users.SingleOrDefaultAsync(x => x.Id == command.UserId && x.IsActive, cancellationToken)
+            ?? throw new NotFoundException("User was not found.");
+        var todayUtc = DateTime.UtcNow.Date;
+        var tomorrowUtc = todayUtc.AddDays(1);
+        var uploadedToday = await _db.Documents.CountAsync(x => x.UserId == command.UserId && x.CreatedAtUtc >= todayUtc && x.CreatedAtUtc < tomorrowUtc, cancellationToken);
+        if (!user.HasActivePlus(DateTime.UtcNow) && uploadedToday >= 2)
+        {
+            throw new BadRequestException("Free plan allows up to 2 documents per day. Upgrade to Plus for unlimited uploads.");
+        }
+
         var fileType = ResolveFileType(command.FileName, command.ContentType);
         var storagePath = await _fileStorage.SaveAsync(command.UserId, command.FileName, command.Content, cancellationToken);
         var storedFileName = Path.GetFileName(storagePath);

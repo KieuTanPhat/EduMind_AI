@@ -30,6 +30,9 @@ public sealed class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQ
             user.Email,
             user.FirstName,
             user.LastName,
-            user.UserRoles.Select(x => x.Role.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
+            user.UserRoles.Select(x => x.Role.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+            user.IsEmailVerified,
+            user.HasActivePlus(DateTime.UtcNow),
+            user.PlusExpiresAtUtc);
     }
 }

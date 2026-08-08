@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using StudyAI.Application.Abstractions;
 using StudyAI.Infrastructure.Authentication;
 using StudyAI.Infrastructure.AI;
+using StudyAI.Infrastructure.Email;
 using StudyAI.Infrastructure.Persistence;
 using StudyAI.Infrastructure.Processing;
 using StudyAI.Infrastructure.Storage;
@@ -34,6 +35,16 @@ public static class DependencyInjection
         });
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.PostConfigure<EmailOptions>(options =>
+        {
+            options.FrontendBaseUrl = configuration["EMAIL_FRONTEND_BASE_URL"] ?? options.FrontendBaseUrl;
+            options.SmtpHost = configuration["EMAIL_SMTP_HOST"] ?? options.SmtpHost;
+            options.Username = configuration["EMAIL_SMTP_USERNAME"] ?? options.Username;
+            options.Password = configuration["EMAIL_SMTP_PASSWORD"] ?? options.Password;
+            options.FromAddress = configuration["EMAIL_FROM_ADDRESS"] ?? options.FromAddress;
+        });
+        services.AddSingleton<IEmailService, SmtpEmailService>();
         var storageProvider = configuration["Storage:Provider"] ?? "Local";
         if (storageProvider.Equals("R2", StringComparison.OrdinalIgnoreCase))
         {

@@ -1,12 +1,12 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import { api } from '../lib/api'
-import type { AuthResponse, CurrentUser } from '../types'
+import type { AuthResponse, CurrentUser, RegisterResponse } from '../types'
 
 type AuthContextValue = {
   user: CurrentUser | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>
+  register: (email: string, password: string, firstName: string, lastName: string) => Promise<RegisterResponse>
   logout: () => void
 }
 
@@ -36,12 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async login(email, password) {
       const { data } = await api.post<AuthResponse>('/auth/login', { email, password })
       saveAuth(data)
-      setUser({ userId: data.userId, email: data.email, firstName: data.firstName, lastName: data.lastName, roles: data.roles })
+      const current = await api.get<CurrentUser>('/auth/me')
+      setUser(current.data)
     },
     async register(email, password, firstName, lastName) {
-      const { data } = await api.post<AuthResponse>('/auth/register', { email, password, firstName, lastName })
-      saveAuth(data)
-      setUser({ userId: data.userId, email: data.email, firstName: data.firstName, lastName: data.lastName, roles: data.roles })
+      const { data } = await api.post<RegisterResponse>('/auth/register', { email, password, firstName, lastName })
+      return data
     },
     logout() {
       localStorage.removeItem('edumind.accessToken')

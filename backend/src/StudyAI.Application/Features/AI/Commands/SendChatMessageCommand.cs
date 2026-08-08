@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
+using StudyAI.Application.Common;
 using StudyAI.Application.Common.Exceptions;
 using StudyAI.Contracts.AI;
 using StudyAI.Domain.Entities;
@@ -29,6 +30,7 @@ public sealed class SendChatMessageCommandHandler : IRequestHandler<SendChatMess
         {
             throw new BadRequestException("Chat message must contain between 1 and 4000 characters.");
         }
+        await EntitlementPolicy.EnsureDailyAiAllowanceAsync(_db, command.UserId, "chat", 5, cancellationToken);
 
         var session = await _db.ChatSessions
             .Include(x => x.Document)

@@ -10,6 +10,7 @@ public interface IApplicationDbContext
     DbSet<UserRole> UserRoles { get; }
     DbSet<UserPreference> UserPreferences { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<EmailVerificationToken> EmailVerificationTokens { get; }
     DbSet<Document> Documents { get; }
     DbSet<DocumentCategory> DocumentCategories { get; }
     DbSet<Summary> Summaries { get; }
@@ -30,6 +31,8 @@ public interface IApplicationDbContext
     DbSet<ChatMessage> ChatMessages { get; }
     DbSet<AiUsageLog> AiUsageLogs { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<PlusRequest> PlusRequests { get; }
+    DbSet<SupportTicket> SupportTickets { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudyAI.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using StudyAI.Infrastructure.Persistence;
 namespace StudyAI.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(StudyAiDbContext))]
-    partial class StudyAiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808054746_AddEntitlementsAndSupport")]
+    partial class AddEntitlementsAndSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -908,7 +911,7 @@ namespace StudyAI.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsEmailVerified")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsPlus")
                         .ValueGeneratedOnAdd()

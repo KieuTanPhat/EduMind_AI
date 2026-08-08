@@ -20,11 +20,18 @@ public sealed class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(RegisterResponse), StatusCodes.Status201Created)]
+    public async Task<ActionResult<RegisterResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
         var response = await _sender.Send(new RegisterCommand(request), cancellationToken);
         return CreatedAtAction(nameof(GetCurrentUser), routeValues: null, value: response);
+    }
+
+    [HttpGet("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new VerifyEmailCommand(token), cancellationToken);
+        return Ok(new { message = "Email verified successfully." });
     }
 
     [HttpPost("login")]

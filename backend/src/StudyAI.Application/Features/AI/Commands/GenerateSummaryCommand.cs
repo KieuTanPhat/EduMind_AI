@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
+using StudyAI.Application.Common;
 using StudyAI.Application.Common.Exceptions;
 using StudyAI.Contracts.AI;
 using StudyAI.Domain.Entities;
@@ -28,6 +29,7 @@ public sealed class GenerateSummaryCommandHandler : IRequestHandler<GenerateSumm
             .SingleOrDefaultAsync(x => x.Id == command.DocumentId && x.UserId == command.UserId, cancellationToken)
             ?? throw new NotFoundException("Document was not found.");
         EnsureProcessed(document);
+        await EntitlementPolicy.EnsureDailyAiAllowanceAsync(_db, command.UserId, "summary", 3, cancellationToken);
 
         if (document.Summary is not null && !command.ForceRegenerate)
         {

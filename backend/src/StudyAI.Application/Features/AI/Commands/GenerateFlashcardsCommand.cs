@@ -2,6 +2,7 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
+using StudyAI.Application.Common;
 using StudyAI.Application.Common.Exceptions;
 using StudyAI.Contracts.AI;
 using StudyAI.Domain.Entities;
@@ -28,6 +29,7 @@ public sealed class GenerateFlashcardsCommandHandler : IRequestHandler<GenerateF
         var document = await _db.Documents.SingleOrDefaultAsync(x => x.Id == command.DocumentId && x.UserId == command.UserId, cancellationToken)
             ?? throw new NotFoundException("Document was not found.");
         EnsureProcessed(document);
+        await EntitlementPolicy.EnsurePlusAsync(_db, command.UserId, "Flashcards", cancellationToken);
 
         var existing = await _db.Flashcards.AsNoTracking().Where(x => x.DocumentId == document.Id).ToListAsync(cancellationToken);
         if (existing.Count > 0 && !command.ForceRegenerate)

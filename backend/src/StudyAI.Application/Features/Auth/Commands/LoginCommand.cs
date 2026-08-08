@@ -45,6 +45,11 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResp
             throw new UnauthorizedException("Invalid email or password.");
         }
 
+        if (!user.IsEmailVerified)
+        {
+            throw new UnauthorizedException("Please verify your email before signing in.");
+        }
+
         var roles = user.UserRoles.Select(x => x.Role.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var refreshToken = _tokenService.GenerateRefreshToken();
         _db.RefreshTokens.Add(new RefreshToken(user.Id, _tokenService.HashRefreshToken(refreshToken.Token), refreshToken.ExpiresAtUtc));
