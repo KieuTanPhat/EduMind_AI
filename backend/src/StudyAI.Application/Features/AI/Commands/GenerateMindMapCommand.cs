@@ -59,6 +59,7 @@ public sealed class GenerateMindMapCommandHandler : IRequestHandler<GenerateMind
         {
             map = new MindMap(document.Id, title, result.Model);
             document.SetMindMap(map);
+            _db.MindMaps.Add(map);
         }
 
         AddNodes(map, children, null, 0, 0);
@@ -84,6 +85,7 @@ public sealed class GenerateMindMapCommandHandler : IRequestHandler<GenerateMind
             var node = new MindMapNode(map.Id, label, depth, parentId);
             node.SetDescription(description);
             map.Nodes.Add(node);
+            _db.MindMapNodes.Add(node);
             node.SetPosition(index * 220, depth * 140);
             index++;
 
