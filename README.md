@@ -16,7 +16,7 @@ Phase 2 core learning platform đã được triển khai end-to-end trên nền
 - Local file storage với ownership, validation, download, delete, search và pagination
 - PDF/DOCX/TXT extraction, text cleaning/chunking và document processing status
 - Hangfire scheduler (hoặc inline development scheduler khi Hangfire tắt)
-- Gemini summary, mind map, flashcards, quiz và document-grounded Q&A
+- OpenAI (hoặc Gemini) summary, mind map, flashcards, quiz và document-grounded Q&A
 - AI structured JSON validation, result caching và AI usage logging
 - React/TypeScript dashboard, document library và document detail workspace
 
@@ -67,7 +67,7 @@ npm run dev
 
 The API exposes Swagger in Development and a health endpoint at `GET /health`. Open the frontend at `http://127.0.0.1:5173`.
 
-Set `GEMINI_API_KEY` to enable AI generation. `Hangfire:Enabled` is false by default for a simple local development setup; set it to true when SQL Server-backed Hangfire processing is configured.
+Set `OPENAI_API_KEY` to enable AI generation with the default `gpt-5.4-nano` provider. Set `AI:Provider` to `Gemini` and provide `GEMINI_API_KEY` to use Gemini instead. `Hangfire:Enabled` is false by default for a simple local development setup; set it to true when SQL Server-backed Hangfire processing is configured.
 
 ### Docker Compose
 

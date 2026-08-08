@@ -71,7 +71,26 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : $"{options.BaseUrl}/");
             client.Timeout = TimeSpan.FromMinutes(2);
         });
-        services.AddScoped<IAiService, GeminiService>();
+        services.Configure<OpenAiOptions>(configuration.GetSection(OpenAiOptions.SectionName));
+        services.PostConfigure<OpenAiOptions>(options =>
+        {
+            options.ApiKey = configuration["OPENAI_API_KEY"] ?? options.ApiKey;
+        });
+        services.AddHttpClient("OpenAI", (provider, client) =>
+        {
+            var options = provider.GetRequiredService<IOptions<OpenAiOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl.EndsWith('/') ? options.BaseUrl : $"{options.BaseUrl}/");
+            client.Timeout = TimeSpan.FromMinutes(2);
+        });
+        var aiProvider = configuration["AI:Provider"] ?? "OpenAI";
+        if (aiProvider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IAiService, GeminiService>();
+        }
+        else
+        {
+            services.AddScoped<IAiService, OpenAiService>();
+        }
         services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
         services.AddScoped<IDocumentProcessingJob, DocumentProcessingJob>();
         services.AddScoped<ITextProcessingService, TextProcessingService>();
