@@ -14,6 +14,8 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
     public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
+    public DbSet<EmailVerificationOtp> EmailVerificationOtps => Set<EmailVerificationOtp>();
+    public DbSet<CaptchaChallenge> CaptchaChallenges => Set<CaptchaChallenge>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentCategory> DocumentCategories => Set<DocumentCategory>();
     public DbSet<Summary> Summaries => Set<Summary>();
@@ -63,6 +65,24 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.HasIndex(x => x.TokenHash).IsUnique();
             entity.HasIndex(x => new { x.UserId, x.ExpiresAtUtc });
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EmailVerificationOtp>(entity =>
+        {
+            entity.ToTable("EmailVerificationOtps");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.CodeHash).HasMaxLength(128).IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.ExpiresAtUtc });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CaptchaChallenge>(entity =>
+        {
+            entity.ToTable("CaptchaChallenges");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Question).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.AnswerHash).HasMaxLength(128).IsRequired();
+            entity.HasIndex(x => x.ExpiresAtUtc);
         });
 
         modelBuilder.Entity<Role>(entity =>

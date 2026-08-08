@@ -67,6 +67,12 @@ public sealed class User : Entity
         Touch(DateTime.UtcNow);
     }
 
+    public void Activate()
+    {
+        IsActive = true;
+        Touch(DateTime.UtcNow);
+    }
+
     public void VerifyEmail() => IsEmailVerified = true;
 
     public bool HasActivePlus(DateTime utcNow) => IsPlus && (!PlusExpiresAtUtc.HasValue || PlusExpiresAtUtc.Value > utcNow);

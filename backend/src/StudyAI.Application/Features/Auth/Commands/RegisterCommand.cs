@@ -30,6 +30,8 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
 
         RuleFor(x => x.Request.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Request.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Request.CaptchaId).NotEmpty();
+        RuleFor(x => x.Request.CaptchaAnswer).NotEmpty().MaximumLength(20);
     }
 }
 
@@ -48,6 +50,20 @@ public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Re
 
     public async Task<RegisterResponse> Handle(RegisterCommand command, CancellationToken cancellationToken)
     {
+        var captcha = await _db.CaptchaChallenges.SingleOrDefaultAsync(x => x.Id == command.Request.CaptchaId, cancellationToken)
+            ?? throw new BadRequestException("CAPTCHA không hợp lệ hoặc đã hết hạn.");
+        if (!captcha.IsUsable(DateTime.UtcNow))
+        {
+            throw new BadRequestException("CAPTCHA đã hết hạn. Vui lòng lấy mã CAPTCHA mới.");
+        }
+
+        var captchaHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(command.Request.CaptchaAnswer.Trim())));
+        if (!CryptographicOperations.FixedTimeEquals(Convert.FromBase64String(captcha.AnswerHash), Convert.FromBase64String(captchaHash)))
+        {
+            throw new BadRequestException("CAPTCHA không chính xác.");
+        }
+        captcha.MarkUsed(DateTime.UtcNow);
+
         var email = command.Request.Email.Trim();
         var normalizedEmail = email.ToUpperInvariant();
 
@@ -70,12 +86,13 @@ public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Re
         user.SetPreference(new UserPreference(user.Id));
         _db.Users.Add(user);
 
-        var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
-        var tokenHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
-        _db.EmailVerificationTokens.Add(new EmailVerificationToken(user.Id, tokenHash, DateTime.UtcNow.AddHours(24)));
+        var otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        var otpHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(otp)));
+        var otpExpiresAtUtc = DateTime.UtcNow.AddMinutes(10);
+        _db.EmailVerificationOtps.Add(new EmailVerificationOtp(user.Id, otpHash, otpExpiresAtUtc));
         await _db.SaveChangesAsync(cancellationToken);
 
-        var developmentVerificationUrl = await _emailService.SendEmailVerificationAsync(user.Email, $"{user.FirstName} {user.LastName}".Trim(), rawToken, cancellationToken);
-        return new RegisterResponse(user.Id, user.Email, true, developmentVerificationUrl);
+        var developmentOtp = await _emailService.SendEmailVerificationOtpAsync(user.Email, $"{user.FirstName} {user.LastName}".Trim(), otp, cancellationToken);
+        return new RegisterResponse(user.Id, user.Email, true, otpExpiresAtUtc, developmentOtp);
     }
 }

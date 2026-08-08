@@ -11,6 +11,8 @@ public interface IApplicationDbContext
     DbSet<UserPreference> UserPreferences { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<EmailVerificationToken> EmailVerificationTokens { get; }
+    DbSet<EmailVerificationOtp> EmailVerificationOtps { get; }
+    DbSet<CaptchaChallenge> CaptchaChallenges { get; }
     DbSet<Document> Documents { get; }
     DbSet<DocumentCategory> DocumentCategories { get; }
     DbSet<Summary> Summaries { get; }

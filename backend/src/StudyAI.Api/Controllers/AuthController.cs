@@ -27,6 +27,22 @@ public sealed class AuthController : ControllerBase
         return CreatedAtAction(nameof(GetCurrentUser), routeValues: null, value: response);
     }
 
+    [HttpGet("captcha")]
+    [ProducesResponseType(typeof(CaptchaResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CaptchaResponse>> GetCaptcha(CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new GetCaptchaQuery(), cancellationToken));
+
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp(VerifyEmailOtpRequest request, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new VerifyEmailOtpCommand(request), cancellationToken);
+        return Ok(new { message = "Email verified successfully." });
+    }
+
+    [HttpPost("resend-otp")]
+    public async Task<ActionResult<ResendOtpResponse>> ResendOtp(ResendEmailOtpRequest request, CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new ResendEmailOtpCommand(request), cancellationToken));
+
     [HttpGet("verify-email")]
     public async Task<IActionResult> VerifyEmail([FromQuery] string token, CancellationToken cancellationToken)
     {

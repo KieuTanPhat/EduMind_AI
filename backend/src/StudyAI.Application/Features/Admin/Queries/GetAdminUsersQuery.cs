@@ -27,7 +27,7 @@ public sealed class GetAdminUsersQueryHandler : IRequestHandler<GetAdminUsersQue
 
         var total = await users.CountAsync(cancellationToken);
         var items = await users.OrderByDescending(x => x.CreatedAtUtc).Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(x => new AdminUserResponse(x.Id, x.Email, x.FirstName, x.LastName, x.IsActive, x.UserRoles.Select(role => role.Role.Name).ToArray(), x.CreatedAtUtc))
+            .Select(x => new AdminUserResponse(x.Id, x.Email, x.FirstName, x.LastName, x.IsActive, x.IsPlus, x.PlusExpiresAtUtc, x.UserRoles.Select(role => role.Role.Name).ToArray(), x.CreatedAtUtc))
             .ToListAsync(cancellationToken);
         return new PagedResponse<AdminUserResponse>(items, page, pageSize, total, (int)Math.Ceiling(total / (double)pageSize));
     }

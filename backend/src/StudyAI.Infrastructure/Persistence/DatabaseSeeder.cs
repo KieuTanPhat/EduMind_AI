@@ -37,9 +37,9 @@ public static class DatabaseSeeder
                 admin.UserRoles.Add(new UserRole(admin.Id, adminRole.Id));
             }
 
-            if (admin.Preference is null)
+            if (!await dbContext.UserPreferences.AnyAsync(x => x.UserId == admin.Id, cancellationToken))
             {
-                admin.SetPreference(new UserPreference(admin.Id));
+                dbContext.UserPreferences.Add(new UserPreference(admin.Id));
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);

@@ -1,6 +1,8 @@
 namespace StudyAI.Contracts.Admin;
 
-public sealed record AdminUserResponse(Guid Id, string Email, string FirstName, string LastName, bool IsActive, IReadOnlyCollection<string> Roles, DateTime CreatedAtUtc);
+public sealed record AdminUserResponse(Guid Id, string Email, string FirstName, string LastName, bool IsActive, bool IsPlus, DateTime? PlusExpiresAtUtc, IReadOnlyCollection<string> Roles, DateTime CreatedAtUtc);
+
+public sealed record GrantPlusUserRequest(int? DurationDays);
 
 public sealed record AdminDocumentResponse(Guid Id, string OriginalFileName, string OwnerEmail, string FileType, string Status, long FileSizeBytes, DateTime CreatedAtUtc);
 

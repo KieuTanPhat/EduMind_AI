@@ -10,7 +10,8 @@ export type AuthResponse = {
   refreshTokenExpiresAtUtc: string
 }
 
-export type RegisterResponse = { userId: string; email: string; requiresEmailVerification: boolean; developmentVerificationUrl?: string }
+export type RegisterResponse = { userId: string; email: string; requiresEmailVerification: boolean; otpExpiresAtUtc: string; developmentOtp?: string }
+export type Captcha = { id: string; question: string; expiresAtUtc: string }
 
 export type CurrentUser = Pick<AuthResponse, 'userId' | 'email' | 'firstName' | 'lastName' | 'roles'> & { isEmailVerified?: boolean; isPlus?: boolean; plusExpiresAtUtc?: string }
 
@@ -84,7 +85,7 @@ export type Dashboard = { totalDocuments: number; processedDocuments: number; in
 export type Progress = { totalDocuments: number; completedDocuments: number; totalStudyMinutes: number; averageCompletionPercentage: number; quizAttempts: number; quizAveragePercentage: number; flashcardsReviewed: number; documents: { documentId: string; originalFileName: string; completionPercentage: number; studyMinutes: number; updatedAtUtc: string }[] }
 export type UserPreference = { learningLevel: string; learningGoal: string; preferredLanguage: string }
 export type AdminStats = { totalUsers: number; activeUsers: number; totalDocuments: number; processedDocuments: number; storageBytes: number; aiRequestCount: number; aiInputTokens: number; aiOutputTokens: number }
-export type AdminUser = { id: string; email: string; firstName: string; lastName: string; isActive: boolean; roles: string[]; createdAtUtc: string }
+export type AdminUser = { id: string; email: string; firstName: string; lastName: string; isActive: boolean; isPlus: boolean; plusExpiresAtUtc?: string; roles: string[]; createdAtUtc: string }
 export type AdminDocument = { id: string; originalFileName: string; ownerEmail: string; fileType: string; status: string; fileSizeBytes: number; createdAtUtc: string }
 export type AiUsageSummary = { operation: string; requestCount: number; inputTokens: number; outputTokens: number }
 export type PlusRequestAdmin = { id: string; userId: string; email: string; fullName: string; amountVnd: number; transferContent: string; status: string; note?: string; createdAtUtc: string }

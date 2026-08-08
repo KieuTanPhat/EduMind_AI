@@ -12,7 +12,7 @@ public sealed class RegisterCommandValidatorTests
     public async Task Validate_ShouldRejectWeakPassword()
     {
         var result = await _validator.ValidateAsync(new RegisterCommand(
-            new RegisterRequest("student@example.com", "password", "Student", "User")));
+            new RegisterRequest("student@example.com", "password", "Student", "User", Guid.NewGuid(), "12")));
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(error => error.PropertyName == "Request.Password");
@@ -22,7 +22,7 @@ public sealed class RegisterCommandValidatorTests
     public async Task Validate_ShouldAcceptValidRegistration()
     {
         var result = await _validator.ValidateAsync(new RegisterCommand(
-            new RegisterRequest("student@example.com", "StrongPass1", "Student", "User")));
+            new RegisterRequest("student@example.com", "StrongPass1", "Student", "User", Guid.NewGuid(), "12")));
 
         result.IsValid.Should().BeTrue();
     }

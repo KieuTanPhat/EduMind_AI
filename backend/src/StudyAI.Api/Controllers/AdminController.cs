@@ -36,6 +36,27 @@ public sealed class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("users/{userId:guid}/activate")]
+    public async Task<IActionResult> ActivateUser(Guid userId, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new ActivateUserCommand(userId), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("users/{userId:guid}/plus")]
+    public async Task<IActionResult> GrantPlus(Guid userId, GrantPlusUserRequest request, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new GrantPlusToUserCommand(userId, request.DurationDays), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("documents/{documentId:guid}/download")]
+    public async Task<IActionResult> DownloadDocument(Guid documentId, CancellationToken cancellationToken)
+    {
+        var document = await _sender.Send(new DownloadAdminDocumentQuery(documentId), cancellationToken);
+        return File(document.Content, document.ContentType, document.FileName, enableRangeProcessing: true);
+    }
+
     [HttpGet("documents")]
     public async Task<ActionResult<PagedResponse<AdminDocumentResponse>>> GetDocuments([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
         => Ok(await _sender.Send(new GetAdminDocumentsQuery(search, page, pageSize), cancellationToken));

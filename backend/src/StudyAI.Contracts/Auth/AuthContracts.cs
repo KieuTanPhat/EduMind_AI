@@ -4,7 +4,9 @@ public sealed record RegisterRequest(
     string Email,
     string Password,
     string FirstName,
-    string LastName);
+    string LastName,
+    Guid CaptchaId = default,
+    string CaptchaAnswer = "");
 
 public sealed record LoginRequest(string Email, string Password);
 
@@ -23,7 +25,13 @@ public sealed record AuthResponse(
     string RefreshToken,
     DateTime RefreshTokenExpiresAtUtc);
 
-public sealed record RegisterResponse(Guid UserId, string Email, bool RequiresEmailVerification, string? DevelopmentVerificationUrl);
+public sealed record RegisterResponse(Guid UserId, string Email, bool RequiresEmailVerification, DateTime OtpExpiresAtUtc, string? DevelopmentOtp);
+
+public sealed record CaptchaResponse(Guid Id, string Question, DateTime ExpiresAtUtc);
+
+public sealed record VerifyEmailOtpRequest(string Email, string Code);
+
+public sealed record ResendEmailOtpRequest(string Email);
 
 public sealed record CurrentUserResponse(
     Guid UserId,

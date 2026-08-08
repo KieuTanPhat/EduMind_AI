@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, Avatar, Badge, Button, Card, Col, Empty, Flex, Input, Layout, List, Menu, Modal, Radio, Row, Select, Skeleton, Space, Statistic, Tag, Tabs, Typography, Upload, message } from 'antd'
-import { AppstoreOutlined, BookOutlined, CloudUploadOutlined, FilePdfOutlined, FileTextOutlined, LogoutOutlined, RobotOutlined, SearchOutlined, SettingOutlined, ThunderboltFilled } from '@ant-design/icons'
+import { Alert, Avatar, Badge, Button, Card, Col, Empty, Flex, Input, Layout, List, Menu, Modal, Pagination, Popconfirm, Radio, Row, Select, Skeleton, Space, Statistic, Tag, Tabs, Typography, Upload, message } from 'antd'
+import { AppstoreOutlined, BookOutlined, CloudUploadOutlined, DownloadOutlined, FilePdfOutlined, FileTextOutlined, LogoutOutlined, ReloadOutlined, RobotOutlined, SearchOutlined, SettingOutlined, ThunderboltFilled } from '@ant-design/icons'
 import { Position, ReactFlow, type Edge, type Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { api } from './lib/api'
 import { useAuth } from './auth/AuthContext'
-import type { AdminDocument, AdminStats, AdminUser, AiUsageSummary, ChatMessage, ChatSession, Dashboard, DocumentDetail, DocumentItem, Flashcards, MindMap, PagedResponse, Quiz, QuizResult, Summary } from './types'
+import type { AdminDocument, AdminStats, AdminUser, AiUsageSummary, Captcha, ChatMessage, ChatSession, Dashboard, DocumentDetail, DocumentItem, Flashcards, MindMap, PagedResponse, Quiz, QuizResult, Summary } from './types'
 import './App.css'
 
 const { Header, Sider, Content } = Layout
@@ -29,10 +29,11 @@ function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const navigate = useNavigate()
   const isRegister = mode === 'register'
   const [error, setError] = useState('')
+  const { data: captcha, refetch: refreshCaptcha, isFetching: captchaLoading } = useQuery({ queryKey: ['register-captcha'], queryFn: () => api.get<Captcha>('/auth/captcha').then(response => response.data), enabled: isRegister })
   const schema = isRegister
-    ? z.object({ email: z.string().email('Email không hợp lệ'), password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự').regex(/[A-Z]/, 'Mật khẩu phải có chữ hoa').regex(/[a-z]/, 'Mật khẩu phải có chữ thường').regex(/[0-9]/, 'Mật khẩu phải có chữ số'), firstName: z.string().min(1, 'Bắt buộc'), lastName: z.string().min(1, 'Bắt buộc') })
+    ? z.object({ email: z.string().email('Email không hợp lệ'), password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự').regex(/[A-Z]/, 'Mật khẩu phải có chữ hoa').regex(/[a-z]/, 'Mật khẩu phải có chữ thường').regex(/[0-9]/, 'Mật khẩu phải có chữ số'), firstName: z.string().min(1, 'Bắt buộc'), lastName: z.string().min(1, 'Bắt buộc'), captchaAnswer: z.string().min(1, 'Vui lòng nhập CAPTCHA') })
     : z.object({ email: z.string().min(1, 'Bắt buộc').refine(value => value.toLowerCase() === 'admin' || z.string().email().safeParse(value).success, 'Nhập email hoặc tài khoản admin'), password: z.string().min(1, 'Bắt buộc'), firstName: z.string().optional(), lastName: z.string().optional() })
-  const form = useForm<any>({ resolver: zodResolver(schema), defaultValues: { email: '', password: '', firstName: '', lastName: '' } })
+  const form = useForm<any>({ resolver: zodResolver(schema), defaultValues: { email: '', password: '', firstName: '', lastName: '', captchaAnswer: '' } })
 
   if (isAuthenticated) return <Navigate to="/" replace />
 
@@ -40,9 +41,11 @@ function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     try {
       setError('')
       if (isRegister) {
-        const registration = await register(values.email, values.password, values.firstName, values.lastName)
-        if (registration.developmentVerificationUrl) sessionStorage.setItem('edumind.devVerificationUrl', registration.developmentVerificationUrl)
-        navigate(`/verify-pending?email=${encodeURIComponent(registration.email)}`)
+        if (!captcha) { setError('Đang tải CAPTCHA, vui lòng thử lại.'); return }
+        const registration = await register(values.email, values.password, values.firstName, values.lastName, captcha.id, values.captchaAnswer)
+        if (registration.developmentOtp) sessionStorage.setItem('edumind.devOtp', registration.developmentOtp)
+        sessionStorage.setItem('edumind.otpEmail', registration.email)
+        navigate(`/verify-otp?email=${encodeURIComponent(registration.email)}`)
       } else {
         await login(values.email, values.password)
         navigate('/')
@@ -52,7 +55,7 @@ function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
   return <div className="auth-page">
     <div className="auth-art"><div className="orb orb-a" /><div className="orb orb-b" /><div className="auth-brand brand-font"><span className="brand-mark">✦</span> EduMind AI</div><div className="auth-copy"><Typography.Title>Học sâu hơn.<br /><span>Nhớ lâu hơn.</span></Typography.Title><Typography.Paragraph>Biến mọi tài liệu thành lộ trình học riêng dành cho bạn với sức mạnh của AI.</Typography.Paragraph><div className="auth-pills"><span>✦ Tóm tắt thông minh</span><span>⌁ Mind map trực quan</span><span>◈ Quiz cá nhân hóa</span></div></div></div>
-    <div className="auth-form-wrap"><div className="auth-form"><Typography.Text className="eyebrow">WELCOME BACK</Typography.Text><Typography.Title level={2}>{isRegister ? 'Tạo tài khoản mới' : 'Chào mừng trở lại'}</Typography.Title><Typography.Paragraph type="secondary">{isRegister ? 'Bắt đầu hành trình học tập thông minh.' : 'Tiếp tục hành trình học tập của bạn.'}</Typography.Paragraph>{error && <Alert showIcon type="error" message={error} className="form-alert" />}<form onSubmit={form.handleSubmit(submit)}>{isRegister && <Row gutter={12}><Col span={12}><Field label="Họ" name="firstName" register={form.register} error={form.formState.errors.firstName?.message} placeholder="Nguyễn" /></Col><Col span={12}><Field label="Tên" name="lastName" register={form.register} error={form.formState.errors.lastName?.message} placeholder="An" /></Col></Row>}<Field label="Email" name="email" register={form.register} error={form.formState.errors.email?.message} placeholder="you@example.com" type="email" /><Field label="Mật khẩu" name="password" register={form.register} error={form.formState.errors.password?.message} placeholder="Tối thiểu 8 ký tự" type="password" /><Button type="primary" htmlType="submit" size="large" block loading={form.formState.isSubmitting}>{isRegister ? 'Tạo tài khoản' : 'Đăng nhập'} <span>→</span></Button></form><div className="auth-switch">{isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'} <Link to={isRegister ? '/login' : '/register'}>{isRegister ? 'Đăng nhập' : 'Đăng ký miễn phí'}</Link></div></div></div>
+    <div className="auth-form-wrap"><div className="auth-form"><Typography.Text className="eyebrow">WELCOME BACK</Typography.Text><Typography.Title level={2}>{isRegister ? 'Tạo tài khoản mới' : 'Chào mừng trở lại'}</Typography.Title><Typography.Paragraph type="secondary">{isRegister ? 'Bắt đầu hành trình học tập thông minh.' : 'Tiếp tục hành trình học tập của bạn.'}</Typography.Paragraph>{error && <Alert showIcon type="error" message={error} className="form-alert" />}<form onSubmit={form.handleSubmit(submit)}>{isRegister && <Row gutter={12}><Col span={12}><Field label="Họ" name="firstName" register={form.register} error={form.formState.errors.firstName?.message} placeholder="Nguyễn" /></Col><Col span={12}><Field label="Tên" name="lastName" register={form.register} error={form.formState.errors.lastName?.message} placeholder="An" /></Col></Row>}<Field label="Email" name="email" register={form.register} error={form.formState.errors.email?.message} placeholder="you@example.com" type="email" /><Field label="Mật khẩu" name="password" register={form.register} error={form.formState.errors.password?.message} placeholder="Tối thiểu 8 ký tự" type="password" />{isRegister && <div className="captcha-box"><div className="captcha-question"><Typography.Text strong>CAPTCHA: {captcha?.question ?? 'Đang tải...'}</Typography.Text><Button type="text" icon={<ReloadOutlined />} loading={captchaLoading} onClick={() => { form.setValue('captchaAnswer', ''); void refreshCaptcha() }} aria-label="Đổi CAPTCHA" /></div><Field label="Nhập kết quả" name="captchaAnswer" register={form.register} error={form.formState.errors.captchaAnswer?.message} placeholder="Ví dụ: 12" /></div>}<Button type="primary" htmlType="submit" size="large" block loading={form.formState.isSubmitting}>{isRegister ? 'Tiếp tục xác nhận email' : 'Đăng nhập'} <span>→</span></Button></form><div className="auth-switch">{isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'} <Link to={isRegister ? '/login' : '/register'}>{isRegister ? 'Đăng nhập' : 'Đăng ký miễn phí'}</Link></div></div></div>
   </div>
 }
 
@@ -95,6 +98,35 @@ function DashboardPage() {
 }
 
 function AdminPage() {
+  const [search, setSearch] = useState('')
+  const [documentPage, setDocumentPage] = useState(1)
+  const queryClient = useQueryClient()
+  const { data: stats } = useQuery({ queryKey: ['admin-stats'], queryFn: () => api.get<AdminStats>('/admin/statistics').then(r => r.data) })
+  const { data: users, isLoading } = useQuery({ queryKey: ['admin-users', search], queryFn: () => api.get<PagedResponse<AdminUser>>('/admin/users', { params: { search, page: 1, pageSize: 100 } }).then(r => r.data) })
+  const { data: documents } = useQuery({ queryKey: ['admin-documents', documentPage], queryFn: () => api.get<PagedResponse<AdminDocument>>('/admin/documents', { params: { page: documentPage, pageSize: 50 } }).then(r => r.data) })
+  const { data: usage } = useQuery({ queryKey: ['admin-ai-usage'], queryFn: () => api.get<AiUsageSummary[]>('/admin/ai-usage').then(r => r.data) })
+
+  async function updateUser(id: string, action: 'activate' | 'deactivate' | 'plus') {
+    try {
+      if (action === 'plus') await api.post(`/admin/users/${id}/plus`, { durationDays: 30 })
+      else await api.post(`/admin/users/${id}/${action}`)
+      message.success(action === 'plus' ? 'Đã cấp Plus 30 ngày.' : action === 'activate' ? 'Đã kích hoạt lại tài khoản.' : 'Đã vô hiệu hóa tài khoản.')
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    } catch (error) { message.error(errorMessage(error)) }
+  }
+
+  async function downloadDocument(item: AdminDocument) {
+    try {
+      const response = await api.get(`/admin/documents/${item.id}/download`, { responseType: 'blob' })
+      const url = URL.createObjectURL(response.data)
+      const anchor = document.createElement('a'); anchor.href = url; anchor.download = item.originalFileName; anchor.click(); URL.revokeObjectURL(url)
+    } catch (error) { message.error(errorMessage(error)) }
+  }
+
+  return <div className="page"><div className="hero-row"><div><Typography.Text className="eyebrow">ADMIN CONSOLE</Typography.Text><Typography.Title level={1}>Quản trị hệ thống</Typography.Title><Typography.Paragraph type="secondary">Quản lý tài khoản, cấp Plus và kiểm tra toàn bộ tài liệu đã tải lên.</Typography.Paragraph></div></div><Row gutter={[16, 16]} className="stats-row"><Col xs={12} lg={6}><Card><Statistic title="Người dùng" value={stats?.totalUsers ?? 0} /></Card></Col><Col xs={12} lg={6}><Card><Statistic title="Tài liệu" value={stats?.totalDocuments ?? 0} /></Card></Col><Col xs={12} lg={6}><Card><Statistic title="Dung lượng" value={formatBytes(stats?.storageBytes ?? 0)} /></Card></Col><Col xs={12} lg={6}><Card><Statistic title="AI requests" value={stats?.aiRequestCount ?? 0} /></Card></Col></Row><Tabs items={[{ key: 'users', label: 'Quản lý tài khoản', children: <Card className="content-card"><Input prefix={<SearchOutlined />} placeholder="Tìm email hoặc tên..." value={search} onChange={event => setSearch(event.target.value)} allowClear style={{ maxWidth: 420, marginBottom: 16 }} />{isLoading ? <Skeleton active /> : <List dataSource={users?.items ?? []} renderItem={item => <List.Item actions={[<Button key="plus" type="link" onClick={() => void updateUser(item.id, 'plus')}>Cấp Plus 30 ngày</Button>, item.isActive ? <Popconfirm key="deactivate" title="Vô hiệu hóa tài khoản này?" onConfirm={() => void updateUser(item.id, 'deactivate')}><Button danger type="text">Vô hiệu hóa</Button></Popconfirm> : <Button key="activate" type="text" onClick={() => void updateUser(item.id, 'activate')}>Kích hoạt lại</Button>]}><List.Item.Meta title={<Space>{item.firstName} {item.lastName}{item.isPlus ? <Tag color="purple">PLUS</Tag> : <Tag>FREE</Tag>}</Space>} description={`${item.email} · ${item.roles.join(', ')} · ${item.isActive ? 'Đang hoạt động' : 'Đã vô hiệu hóa'} · ${formatDate(item.createdAtUtc)}`} /></List.Item>} />}</Card> }, { key: 'documents', label: 'Toàn bộ tài liệu', children: <Card className="content-card"><List dataSource={documents?.items ?? []} renderItem={item => <List.Item actions={[<Button key="download" icon={<DownloadOutlined />} onClick={() => void downloadDocument(item)}>Xem / tải xuống</Button>]}><List.Item.Meta title={item.originalFileName} description={`${item.ownerEmail} · ${formatBytes(item.fileSizeBytes)} · ${formatDate(item.createdAtUtc)}`} /><Tag color={statusColor(item.status)}>{item.status}</Tag></List.Item>} />{documents && <Pagination current={documents.page} pageSize={documents.pageSize} total={documents.totalCount} showSizeChanger={false} onChange={setDocumentPage} style={{ marginTop: 16, textAlign: 'right' }} />}</Card> }, { key: 'usage', label: 'AI usage', children: <Card className="content-card"><List dataSource={usage ?? []} renderItem={item => <List.Item><List.Item.Meta title={item.operation} description={`${item.requestCount} requests`} /><Typography.Text>{item.inputTokens + item.outputTokens} tokens</Typography.Text></List.Item>} /></Card> }]} /></div>
+}
+
+export function LegacyAdminPage() {
   const [search, setSearch] = useState('')
   const queryClient = useQueryClient()
   const { data: stats } = useQuery({ queryKey: ['admin-stats'], queryFn: () => api.get<AdminStats>('/admin/statistics').then(r => r.data) })
@@ -171,6 +203,35 @@ function FlashcardsPanel({ data, onGenerate }: { data?: Flashcards; onGenerate: 
 function QuizPanel({ data, onGenerate }: { data?: Quiz; onGenerate: () => void }) { const [answers, setAnswers] = useState<Record<string, string>>({}); const [result, setResult] = useState<QuizResult>(); const submit = async () => { try { const response = await api.post<QuizResult>(`/quizzes/${data?.id}/submit`, { answers: Object.entries(answers).map(([questionId, selectedOptionId]) => ({ questionId, selectedOptionId })) }); setResult(response.data); message.success(`Bạn đạt ${response.data.score}/${response.data.totalQuestions} câu`) } catch (error) { message.error(errorMessage(error)) } }; if (!data) return <EmptyAi title="Kiểm tra kiến thức" description="Tạo một quiz ngắn để kiểm tra bạn đã nắm tài liệu đến đâu." action={onGenerate} />; return <div className="quiz-panel"><Typography.Title level={3}>{data.title}</Typography.Title>{data.questions.map((question, index) => <Card key={question.id} className="quiz-question"><Typography.Text strong>Câu {index + 1}</Typography.Text><Typography.Paragraph>{question.content}</Typography.Paragraph><Radio.Group value={answers[question.id]} onChange={event => { setAnswers({ ...answers, [question.id]: event.target.value }); setResult(undefined) }} options={question.options.map(option => ({ label: option.text, value: option.id }))} /></Card>)}<Space><Button type="primary" onClick={() => void submit}>Nộp bài</Button>{result && <Tag color="green">Kết quả: {result.score}/{result.totalQuestions} ({result.percentage}%)</Tag>}</Space></div> }
 function ChatPanel({ messages, value, onChange, onSend }: { messages: ChatMessage[]; value: string; onChange: (value: string) => void; onSend: () => void }) { return <div className="chat-panel"><div className="chat-messages">{messages.length === 0 ? <Empty description="Đặt câu hỏi về nội dung tài liệu" /> : messages.map(item => <div key={item.id} className={`chat-message ${item.role === 'user' ? 'user' : 'assistant'}`}><Avatar>{item.role === 'user' ? 'U' : <RobotOutlined />}</Avatar><div><Typography.Text strong>{item.role === 'user' ? 'Bạn' : 'EduMind AI'}</Typography.Text><p>{item.content}</p></div></div>)}</div><Input.TextArea value={value} onChange={event => onChange(event.target.value)} onPressEnter={event => { if (!event.shiftKey) { event.preventDefault(); onSend() } }} placeholder="Hỏi AI về tài liệu này..." autoSize={{ minRows: 2, maxRows: 5 }} /><Button type="primary" onClick={onSend} className="chat-send">Gửi câu hỏi</Button></div> }
 
+function VerifyOtpPage() {
+  const email = new URLSearchParams(window.location.search).get('email') ?? sessionStorage.getItem('edumind.otpEmail') ?? ''
+  const [code, setCode] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [developmentOtp, setDevelopmentOtp] = useState(sessionStorage.getItem('edumind.devOtp') ?? '')
+
+  async function verify() {
+    try {
+      setError(''); setLoading(true)
+      await api.post('/auth/verify-otp', { email, code })
+      setSuccess(true); sessionStorage.removeItem('edumind.devOtp')
+    } catch (requestError) { setError(errorMessage(requestError)) } finally { setLoading(false) }
+  }
+
+  async function resend() {
+    try {
+      setError(''); setResending(true)
+      const response = await api.post<{ developmentOtp?: string }>('/auth/resend-otp', { email })
+      if (response.data.developmentOtp) { setDevelopmentOtp(response.data.developmentOtp); sessionStorage.setItem('edumind.devOtp', response.data.developmentOtp) }
+      message.success('Đã gửi lại mã OTP.')
+    } catch (requestError) { setError(errorMessage(requestError)) } finally { setResending(false) }
+  }
+
+  return <div className="auth-page verify-page"><div className="auth-form-wrap"><div className="auth-form verify-card"><Typography.Text className="eyebrow">EMAIL OTP</Typography.Text><Typography.Title level={2}>{success ? 'Xác nhận thành công' : 'Nhập mã OTP'}</Typography.Title>{success ? <><Typography.Paragraph type="secondary">Email <b>{email}</b> đã được xác nhận. Bạn có thể đăng nhập ngay.</Typography.Paragraph><Link to="/login"><Button type="primary" block>Đăng nhập</Button></Link></> : <><Typography.Paragraph type="secondary">Mã 6 chữ số đã được gửi đến <b>{email}</b>. Mã có hiệu lực trong 10 phút.</Typography.Paragraph>{developmentOtp && <Alert type="info" showIcon message={`Development OTP: ${developmentOtp}`} description="SMTP chưa cấu hình nên mã được hiển thị để kiểm thử local." />}{error && <Alert showIcon type="error" message={error} className="form-alert" />}<Input value={code} onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} placeholder="000000" size="large" inputMode="numeric" style={{ letterSpacing: 8, textAlign: 'center', margin: '16px 0' }} /><Button type="primary" block size="large" loading={loading} disabled={code.length !== 6} onClick={() => void verify()}>Xác nhận email</Button><Button type="link" block loading={resending} onClick={() => void resend()}>Gửi lại mã OTP</Button></>}</div></div></div>
+}
+
 function VerifyPendingPage() {
   const email = new URLSearchParams(window.location.search).get('email')
   const developmentUrl = sessionStorage.getItem('edumind.devVerificationUrl')
@@ -188,4 +249,4 @@ function VerifyEmailPage() {
   return <div className="auth-page verify-page"><div className="auth-form-wrap"><div className="auth-form verify-card"><Typography.Text className="eyebrow">EMAIL VERIFICATION</Typography.Text><Typography.Title level={2}>{state === 'loading' ? 'Đang xác nhận...' : state === 'success' ? 'Xác nhận thành công' : 'Không thể xác nhận'}</Typography.Title><Typography.Paragraph type="secondary">{detail}</Typography.Paragraph>{state !== 'loading' && <Link to={state === 'success' ? '/login' : '/register'}><Button type="primary" block>{state === 'success' ? 'Đăng nhập' : 'Tạo liên kết mới'}</Button></Link>}</div></div></div>
 }
 
-export default function App() { return <Routes><Route path="/login" element={<AuthPage mode="login" />} /><Route path="/register" element={<AuthPage mode="register" />} /><Route path="/verify-pending" element={<VerifyPendingPage />} /><Route path="/verify-email" element={<VerifyEmailPage />} /><Route path="*" element={<Protected><AppShell /></Protected>} /></Routes> }
+export default function App() { return <Routes><Route path="/login" element={<AuthPage mode="login" />} /><Route path="/register" element={<AuthPage mode="register" />} /><Route path="/verify-otp" element={<VerifyOtpPage />} /><Route path="/verify-pending" element={<VerifyPendingPage />} /><Route path="/verify-email" element={<VerifyEmailPage />} /><Route path="*" element={<Protected><AppShell /></Protected>} /></Routes> }

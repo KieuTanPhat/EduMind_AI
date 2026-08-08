@@ -6,7 +6,7 @@ type AuthContextValue = {
   user: CurrentUser | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, firstName: string, lastName: string) => Promise<RegisterResponse>
+  register: (email: string, password: string, firstName: string, lastName: string, captchaId: string, captchaAnswer: string) => Promise<RegisterResponse>
   logout: () => void
 }
 
@@ -44,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const current = await api.get<CurrentUser>('/auth/me')
       setUser(current.data)
     },
-    async register(email, password, firstName, lastName) {
-      const { data } = await api.post<RegisterResponse>('/auth/register', { email, password, firstName, lastName })
+    async register(email, password, firstName, lastName, captchaId, captchaAnswer) {
+      const { data } = await api.post<RegisterResponse>('/auth/register', { email, password, firstName, lastName, captchaId, captchaAnswer })
       return data
     },
     logout() {
