@@ -18,7 +18,7 @@ const { Header, Sider, Content } = Layout
 function formatBytes(bytes: number) { return `${(bytes / 1024 / 1024).toFixed(1)} MB` }
 function formatDate(value: string) { return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value)) }
 function statusColor(status: string) { return status === 'Processed' ? 'success' : status === 'Failed' ? 'error' : status === 'Processing' ? 'processing' : 'default' }
-function errorMessage(error: any) { return error?.response?.data?.detail ?? 'Không thể kết nối máy chủ. Hãy kiểm tra API.' }
+function errorMessage(error: any) { const data = error?.response?.data; const validationErrors = data?.errors ? Object.values(data.errors).flat().join(' ') : ''; return validationErrors || data?.detail || 'Không thể kết nối máy chủ. Hãy kiểm tra API.' }
 
 function Protected({ children }: { children: ReactNode }) {
   return useAuth().isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
@@ -30,7 +30,7 @@ function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const isRegister = mode === 'register'
   const [error, setError] = useState('')
   const schema = isRegister
-    ? z.object({ email: z.string().email('Email không hợp lệ'), password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự'), firstName: z.string().min(1, 'Bắt buộc'), lastName: z.string().min(1, 'Bắt buộc') })
+    ? z.object({ email: z.string().email('Email không hợp lệ'), password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự').regex(/[A-Z]/, 'Mật khẩu phải có chữ hoa').regex(/[a-z]/, 'Mật khẩu phải có chữ thường').regex(/[0-9]/, 'Mật khẩu phải có chữ số'), firstName: z.string().min(1, 'Bắt buộc'), lastName: z.string().min(1, 'Bắt buộc') })
     : z.object({ email: z.string().email('Email không hợp lệ'), password: z.string().min(1, 'Bắt buộc'), firstName: z.string().optional(), lastName: z.string().optional() })
   const form = useForm<any>({ resolver: zodResolver(schema), defaultValues: { email: '', password: '', firstName: '', lastName: '' } })
 
