@@ -41,7 +41,7 @@ $env:JWT_SECRET = "at-least-32-random-bytes-for-development"
 $env:GEMINI_API_KEY = "your-gemini-key"
 ```
 
-Apply the EF Core migration before using authenticated document endpoints. The frontend API URL is configured with `VITE_API_URL` and defaults to `http://localhost:5194/api`.
+Apply the EF Core migration before using authenticated document endpoints. The frontend API URL is configured with `VITE_API_URL` and defaults to `http://127.0.0.1:5194/api`.
 
 ## Known boundary for Phase 3
 

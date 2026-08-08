@@ -65,7 +65,7 @@ npm install
 npm run dev
 ```
 
-The API exposes Swagger in Development and a health endpoint at `GET /health`. Open the frontend at `http://localhost:5173`.
+The API exposes Swagger in Development and a health endpoint at `GET /health`. Open the frontend at `http://127.0.0.1:5173`.
 
 Set `GEMINI_API_KEY` to enable AI generation. `Hangfire:Enabled` is false by default for a simple local development setup; set it to true when SQL Server-backed Hangfire processing is configured.
 
