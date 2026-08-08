@@ -8,10 +8,12 @@ namespace StudyAI.Api.Infrastructure;
 public sealed class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger;
+    private readonly IHostEnvironment _environment;
 
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHostEnvironment environment)
     {
         _logger = logger;
+        _environment = environment;
     }
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
@@ -41,7 +43,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         {
             Status = statusCode,
             Title = title,
-            Detail = detail,
+            Detail = statusCode >= 500 && _environment.IsDevelopment() ? exception.Message : detail,
             Instance = httpContext.Request.Path
         };
         problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;

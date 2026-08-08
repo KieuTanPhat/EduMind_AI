@@ -46,6 +46,7 @@ public sealed class GenerateSummaryCommandHandler : IRequestHandler<GenerateSumm
         {
             summary = new Summary(document.Id, result.Text, result.Model);
             document.SetSummary(summary);
+            _db.Summaries.Add(summary);
         }
         else
         {
