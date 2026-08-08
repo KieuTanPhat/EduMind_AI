@@ -19,10 +19,10 @@ frontend/.env.*
 # Local storage and logs
 storage/users/*
 !storage/users/.gitkeep
+backend/src/StudyAI.Api/storage/
 logs/
 *.log
 
 # IDE
 .vs/
 .vscode/*.log
-

@@ -1,5 +1,7 @@
 using Hangfire;
 using Hangfire.SqlServer;
+using Amazon.Runtime;
+using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,7 +34,32 @@ public static class DependencyInjection
         });
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
-        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+        var storageProvider = configuration["Storage:Provider"] ?? "Local";
+        if (storageProvider.Equals("R2", StringComparison.OrdinalIgnoreCase))
+        {
+            var r2Options = configuration.GetSection(R2Options.SectionName).Get<R2Options>() ?? new R2Options();
+            r2Options.Endpoint = configuration["R2_ENDPOINT"] ?? r2Options.Endpoint;
+            r2Options.Bucket = configuration["R2_BUCKET"] ?? r2Options.Bucket;
+            r2Options.AccessKeyId = configuration["R2_ACCESS_KEY_ID"] ?? r2Options.AccessKeyId;
+            r2Options.SecretAccessKey = configuration["R2_SECRET_ACCESS_KEY"] ?? r2Options.SecretAccessKey;
+            if (string.IsNullOrWhiteSpace(r2Options.Endpoint) || string.IsNullOrWhiteSpace(r2Options.Bucket) || string.IsNullOrWhiteSpace(r2Options.AccessKeyId) || string.IsNullOrWhiteSpace(r2Options.SecretAccessKey))
+            {
+                throw new InvalidOperationException("Storage:R2 endpoint, bucket, access key and secret key are required when Storage:Provider is R2.");
+            }
+
+            services.AddSingleton(r2Options);
+            services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(new BasicAWSCredentials(r2Options.AccessKeyId, r2Options.SecretAccessKey), new AmazonS3Config
+            {
+                ServiceURL = r2Options.Endpoint,
+                ForcePathStyle = true,
+                AuthenticationRegion = "auto"
+            }));
+            services.AddSingleton<IFileStorageService, R2FileStorageService>();
+        }
+        else
+        {
+            services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+        }
         services.Configure<GeminiOptions>(configuration.GetSection(GeminiOptions.SectionName));
         services.PostConfigure<GeminiOptions>(options =>
         {

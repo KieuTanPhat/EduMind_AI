@@ -23,4 +23,11 @@ public sealed class LearningProgress : Entity
     public User User { get; private set; } = null!;
 
     public Document Document { get; private set; } = null!;
+
+    public void Update(int completionPercentage, int studyMinutes)
+    {
+        CompletionPercentage = Math.Clamp(completionPercentage, 0, 100);
+        StudyMinutes = Math.Max(0, studyMinutes);
+        Touch(DateTime.UtcNow);
+    }
 }

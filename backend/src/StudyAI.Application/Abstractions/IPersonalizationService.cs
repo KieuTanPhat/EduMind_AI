@@ -1,6 +1,8 @@
+using StudyAI.Contracts.Learning;
+
 namespace StudyAI.Application.Abstractions;
 
 public interface IPersonalizationService
 {
-    Task<IReadOnlyCollection<string>> GetRecommendationsAsync(Guid userId, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<RecommendationResponse>> GetRecommendationsAsync(Guid userId, CancellationToken cancellationToken);
 }

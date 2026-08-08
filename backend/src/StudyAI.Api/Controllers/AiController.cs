@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using StudyAI.Application.Features.AI.Commands;
 using StudyAI.Application.Features.AI.Queries;
 using StudyAI.Contracts.AI;
@@ -10,6 +11,7 @@ namespace StudyAI.Api.Controllers;
 
 [ApiController]
 [Authorize]
+[EnableRateLimiting("ai")]
 public sealed class AiController : ControllerBase
 {
     private readonly ISender _sender;

@@ -56,6 +56,14 @@ public sealed class SubmitQuizCommandHandler : IRequestHandler<SubmitQuizCommand
         var completedAtUtc = DateTime.UtcNow;
         attempt.Complete(score, quiz.Questions.Count, completedAtUtc);
         _db.QuizAttempts.Add(attempt);
+        var progress = await _db.LearningProgress.SingleOrDefaultAsync(x => x.UserId == command.UserId && x.DocumentId == quiz.DocumentId, cancellationToken);
+        if (progress is null)
+        {
+            progress = new LearningProgress(command.UserId, quiz.DocumentId);
+            _db.LearningProgress.Add(progress);
+        }
+
+        progress.Update(Math.Max(progress.CompletionPercentage, (int)Math.Round(score * 100m / quiz.Questions.Count)), progress.StudyMinutes);
         await _db.SaveChangesAsync(cancellationToken);
 
         return new QuizResultResponse(

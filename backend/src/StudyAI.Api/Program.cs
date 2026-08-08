@@ -1,7 +1,9 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Threading.RateLimiting;
 using StudyAI.Api.Infrastructure;
 using StudyAI.Application;
 using StudyAI.Infrastructure;
@@ -88,6 +90,17 @@ try
             };
         });
     builder.Services.AddAuthorization();
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddFixedWindowLimiter("ai", limiterOptions =>
+        {
+            limiterOptions.PermitLimit = builder.Configuration.GetValue("RateLimiting:AiPermitLimit", 20);
+            limiterOptions.Window = TimeSpan.FromMinutes(1);
+            limiterOptions.QueueLimit = 0;
+            limiterOptions.AutoReplenishment = true;
+        });
+    });
 
     var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
     builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>
@@ -115,6 +128,7 @@ try
     }
 
     app.UseCors("Frontend");
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();

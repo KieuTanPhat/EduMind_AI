@@ -69,6 +69,17 @@ The API exposes Swagger in Development and a health endpoint at `GET /health`. O
 
 Set `GEMINI_API_KEY` to enable AI generation. `Hangfire:Enabled` is false by default for a simple local development setup; set it to true when SQL Server-backed Hangfire processing is configured.
 
+### Docker Compose
+
+Copy the example environment file, set strong local secrets, then start the full stack:
+
+```powershell
+Copy-Item infrastructure/docker/.env.example infrastructure/docker/.env
+docker compose --env-file infrastructure/docker/.env -f infrastructure/docker/docker-compose.yml up --build
+```
+
+The compose stack exposes the frontend at `http://localhost:5173` and the API at `http://localhost:5194`. It runs SQL Server, automatically applies migrations and persists database/file-storage volumes.
+
 To use another SQL Server instance, set `DATABASE_CONNECTION_STRING` or update the local connection string in `appsettings.json`. Do not commit production secrets. The API accepts `JWT_SECRET` and requires at least 32 bytes.
 
 ## Verification
@@ -98,3 +109,22 @@ POST     /api/documents/{id}/chat/sessions
 GET      /api/documents/{id}/chat/sessions
 POST/GET /api/chat/sessions/{id}/messages
 ```
+
+## Phase 3 API surface
+
+```text
+GET  /api/dashboard
+GET  /api/progress
+PUT  /api/documents/{id}/progress
+GET  /api/recommendations
+POST /api/flashcards/{id}/review
+GET/PUT /api/preferences
+
+GET  /api/admin/statistics
+GET  /api/admin/users
+POST /api/admin/users/{id}/deactivate
+GET  /api/admin/documents
+GET  /api/admin/ai-usage
+```
+
+Admin access is role-based. After registering a user, use `database/scripts/promote-user-to-admin.sql` to assign the seeded `Admin` role in a controlled environment.

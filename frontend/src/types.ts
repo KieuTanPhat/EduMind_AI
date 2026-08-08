@@ -77,5 +77,12 @@ export type QuizResult = {
   completedAtUtc: string
 }
 
+export type Recommendation = { id: string; title: string; description: string; isCompleted: boolean; expiresAtUtc?: string; createdAtUtc: string }
+export type Dashboard = { totalDocuments: number; processedDocuments: number; inProgressDocuments: number; completedQuizzes: number; averageQuizPercentage: number; flashcardsReviewed: number; recentDocuments: { id: string; originalFileName: string; fileType: string; status: string; fileSizeBytes: number; createdAtUtc: string }[]; recommendations: Recommendation[] }
+export type Progress = { totalDocuments: number; completedDocuments: number; totalStudyMinutes: number; averageCompletionPercentage: number; quizAttempts: number; quizAveragePercentage: number; flashcardsReviewed: number; documents: { documentId: string; originalFileName: string; completionPercentage: number; studyMinutes: number; updatedAtUtc: string }[] }
+export type UserPreference = { learningLevel: string; learningGoal: string; preferredLanguage: string }
+export type AdminStats = { totalUsers: number; activeUsers: number; totalDocuments: number; processedDocuments: number; storageBytes: number; aiRequestCount: number; aiInputTokens: number; aiOutputTokens: number }
+export type AdminUser = { id: string; email: string; firstName: string; lastName: string; isActive: boolean; roles: string[]; createdAtUtc: string }
+
 export type ChatSession = { id: string; documentId: string; title: string; createdAtUtc: string }
 export type ChatMessage = { id: string; sessionId: string; role: string; content: string; createdAtUtc: string }

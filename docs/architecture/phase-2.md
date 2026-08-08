@@ -43,6 +43,4 @@ $env:GEMINI_API_KEY = "your-gemini-key"
 
 Apply the EF Core migration before using authenticated document endpoints. The frontend API URL is configured with `VITE_API_URL` and defaults to `http://127.0.0.1:5194/api`.
 
-## Known boundary for Phase 3
-
-Personalized learning profile, progress aggregation, weak-topic detection, recommendations, admin dashboards, rate limiting, Docker/CI and Cloudflare R2 deployment remain Phase 3 work.
+Phase 3 implementation is documented in [phase-3.md](phase-3.md), including personalization, progress, recommendations, admin APIs, rate limiting, Docker/CI and Cloudflare R2-ready storage.

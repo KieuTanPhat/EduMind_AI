@@ -24,4 +24,10 @@ public sealed class Recommendation : Entity
     public DateTime? ExpiresAtUtc { get; private set; }
 
     public User User { get; private set; } = null!;
+
+    public void Complete()
+    {
+        IsCompleted = true;
+        Touch(DateTime.UtcNow);
+    }
 }
