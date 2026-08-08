@@ -1,3 +1,5 @@
+using StudyAI.Domain.Entities;
+
 namespace StudyAI.Application.Features.AI;
 
 internal static class AiPromptTemplates
@@ -11,4 +13,18 @@ internal static class AiPromptTemplates
     public const string Quiz = "Create a multiple-choice quiz from the supplied document. Return ONLY valid JSON with this shape: {\"title\":\"...\",\"questions\":[{\"content\":\"...\",\"explanation\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":true}]}]}. Create exactly four options per question, with exactly one correct option. Use 5 to 10 questions.";
 
     public const string Chat = "Answer the user's question using only the supplied document context. If the answer is not present or cannot be inferred safely from the context, say explicitly that the document does not provide enough information. Do not use outside knowledge. Answer in Vietnamese.";
+
+    public static string WithPreferences(string prompt, UserPreference? preference)
+    {
+        if (preference is null)
+        {
+            return prompt;
+        }
+
+        var language = preference.PreferredLanguage.Equals("en", StringComparison.OrdinalIgnoreCase)
+            ? "English"
+            : "Vietnamese";
+
+        return $"{prompt}\n\nPERSONALIZATION:\n- Learner level: {preference.LearningLevel}\n- Learning goal: {preference.LearningGoal}\n- Response language: {language}\nAdjust the difficulty and examples to this learner level and goal. Respond in the requested language.";
+    }
 }

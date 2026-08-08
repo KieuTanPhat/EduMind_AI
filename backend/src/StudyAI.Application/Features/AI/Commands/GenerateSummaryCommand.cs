@@ -34,8 +34,10 @@ public sealed class GenerateSummaryCommandHandler : IRequestHandler<GenerateSumm
             return Map(document.Summary);
         }
 
+        var preference = await _db.UserPreferences.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
         var result = await _aiService.GenerateAsync(
-            new AiGenerationRequest("summary", BuildContext(document.ExtractedText!), AiPromptTemplates.Summary, false),
+            new AiGenerationRequest("summary", BuildContext(document.ExtractedText!), AiPromptTemplates.WithPreferences(AiPromptTemplates.Summary, preference), false),
             cancellationToken);
 
         _db.AiUsageLogs.Add(new AiUsageLog(command.UserId, "summary", result.Model, result.InputTokens, result.OutputTokens));

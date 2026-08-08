@@ -83,6 +83,8 @@ export type Progress = { totalDocuments: number; completedDocuments: number; tot
 export type UserPreference = { learningLevel: string; learningGoal: string; preferredLanguage: string }
 export type AdminStats = { totalUsers: number; activeUsers: number; totalDocuments: number; processedDocuments: number; storageBytes: number; aiRequestCount: number; aiInputTokens: number; aiOutputTokens: number }
 export type AdminUser = { id: string; email: string; firstName: string; lastName: string; isActive: boolean; roles: string[]; createdAtUtc: string }
+export type AdminDocument = { id: string; originalFileName: string; ownerEmail: string; fileType: string; status: string; fileSizeBytes: number; createdAtUtc: string }
+export type AiUsageSummary = { operation: string; requestCount: number; inputTokens: number; outputTokens: number }
 
 export type ChatSession = { id: string; documentId: string; title: string; createdAtUtc: string }
 export type ChatMessage = { id: string; sessionId: string; role: string; content: string; createdAtUtc: string }

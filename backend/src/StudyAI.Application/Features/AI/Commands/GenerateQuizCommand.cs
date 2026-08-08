@@ -36,8 +36,10 @@ public sealed class GenerateQuizCommandHandler : IRequestHandler<GenerateQuizCom
             return Map(existing);
         }
 
+        var preference = await _db.UserPreferences.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
         var result = await _aiService.GenerateAsync(
-            new AiGenerationRequest("quiz", BuildContext(document.ExtractedText!), AiPromptTemplates.Quiz, true),
+            new AiGenerationRequest("quiz", BuildContext(document.ExtractedText!), AiPromptTemplates.WithPreferences(AiPromptTemplates.Quiz, preference), true),
             cancellationToken);
         using var json = AiJsonHelpers.Parse(result.Text);
         var title = AiJsonHelpers.RequiredString(json.RootElement, "title", 500);

@@ -35,8 +35,10 @@ public sealed class GenerateMindMapCommandHandler : IRequestHandler<GenerateMind
             return Map(document.MindMap);
         }
 
+        var preference = await _db.UserPreferences.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
         var result = await _aiService.GenerateAsync(
-            new AiGenerationRequest("mindmap", BuildContext(document.ExtractedText!), AiPromptTemplates.MindMap, true),
+            new AiGenerationRequest("mindmap", BuildContext(document.ExtractedText!), AiPromptTemplates.WithPreferences(AiPromptTemplates.MindMap, preference), true),
             cancellationToken);
         using var json = AiJsonHelpers.Parse(result.Text);
         var title = AiJsonHelpers.RequiredString(json.RootElement, "title", 500);

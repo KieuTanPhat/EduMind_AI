@@ -10,7 +10,7 @@
   - processed documents without summaries → create a summary;
   - quiz average below 50% → revisit weak material;
   - generated flashcards not yet reviewed → schedule a flashcard session.
-- `UserPreference` stores learning level, goal and language for future prompt difficulty adjustment.
+- `UserPreference` stores learning level, goal and language; these values are applied to AI generation prompts to adjust difficulty, examples and response language.
 
 ## Admin
 

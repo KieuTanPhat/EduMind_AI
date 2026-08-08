@@ -35,8 +35,10 @@ public sealed class GenerateFlashcardsCommandHandler : IRequestHandler<GenerateF
             return Map(document.Id, existing);
         }
 
+        var preference = await _db.UserPreferences.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
         var result = await _aiService.GenerateAsync(
-            new AiGenerationRequest("flashcards", BuildContext(document.ExtractedText!), AiPromptTemplates.Flashcards, true),
+            new AiGenerationRequest("flashcards", BuildContext(document.ExtractedText!), AiPromptTemplates.WithPreferences(AiPromptTemplates.Flashcards, preference), true),
             cancellationToken);
         using var json = AiJsonHelpers.Parse(result.Text);
         var cardsElement = json.RootElement.ValueKind == JsonValueKind.Array

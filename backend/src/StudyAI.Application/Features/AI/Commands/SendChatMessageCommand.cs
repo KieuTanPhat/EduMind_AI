@@ -43,7 +43,9 @@ public sealed class SendChatMessageCommandHandler : IRequestHandler<SendChatMess
         var userMessage = new ChatMessage(session.Id, "user", content);
         session.Messages.Add(userMessage);
         var history = string.Join("\n", session.Messages.OrderByDescending(x => x.CreatedAtUtc).Take(10).Reverse().Select(message => $"{message.Role}: {message.Content}"));
-        var prompt = $"{AiPromptTemplates.Chat}\n\nCHAT HISTORY:\n{history}\n\nUSER QUESTION:\n{content}";
+        var preference = await _db.UserPreferences.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
+        var prompt = $"{AiPromptTemplates.WithPreferences(AiPromptTemplates.Chat, preference)}\n\nCHAT HISTORY:\n{history}\n\nUSER QUESTION:\n{content}";
         var result = await _aiService.GenerateAsync(
             new AiGenerationRequest("chat", BuildContext(session.Document.ExtractedText), prompt, false),
             cancellationToken);
