@@ -14,7 +14,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider theme={{ token: { colorPrimary: '#3b82f6', borderRadius: 14, fontFamily: 'Inter, system-ui, sans-serif' } }}>
+      <ConfigProvider theme={{ token: { colorPrimary: '#377ff0', colorLink: '#245dca', colorText: '#17263b', colorTextSecondary: '#73839a', colorBorder: '#e4eaf2', colorBgLayout: '#f7f9fc', borderRadius: 10, borderRadiusLG: 16, fontFamily: 'DM Sans, system-ui, sans-serif', controlHeight: 40 }, components: { Card: { paddingLG: 22 }, Tabs: { itemColor: '#73839a', itemSelectedColor: '#245dca', inkBarColor: '#377ff0' }, Menu: { itemSelectedBg: '#eaf2ff', itemSelectedColor: '#245dca', itemHoverBg: '#f5f8ff' } } }}>
         <BrowserRouter>
           <AuthProvider>
             <App />
