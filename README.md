@@ -69,7 +69,7 @@ The API exposes Swagger in Development and a health endpoint at `GET /health`. O
 
 Set `OPENAI_API_KEY` to enable AI generation with the default `gpt-5.4-nano` provider. Set `AI:Provider` to `Gemini` and provide `GEMINI_API_KEY` to use Gemini instead. `Hangfire:Enabled` is false by default for a simple local development setup; set it to true when SQL Server-backed Hangfire processing is configured.
 
-Registration uses a one-time CAPTCHA followed by a 6-digit email OTP. Configure `EMAIL_SMTP_HOST`, `EMAIL_SMTP_USERNAME`, `EMAIL_SMTP_PASSWORD`, and `EMAIL_FROM_ADDRESS` for real email delivery. When SMTP is empty in Development, the OTP is returned to the UI for local testing only.
+Registration uses an image CAPTCHA with rotated characters followed by a 6-digit email OTP. Configure `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USERNAME`, `EMAIL_SMTP_PASSWORD`, `EMAIL_FROM_ADDRESS`, and `EMAIL_SMTP_USE_SSL` for real email delivery. For Gmail, use an App Password instead of the normal account password. When SMTP is empty in Development, the OTP is returned to the UI for local testing only.
 
 Local development seeds an administrator account with username `admin` and password `123`. Change or remove this bootstrap credential before deployment.
 
@@ -139,6 +139,7 @@ GET  /api/admin/users
 POST /api/admin/users/{id}/deactivate
 POST /api/admin/users/{id}/activate
 POST /api/admin/users/{id}/plus
+DELETE /api/admin/users/{id}
 GET  /api/admin/documents
 GET  /api/admin/documents/{id}/download
 GET  /api/admin/ai-usage

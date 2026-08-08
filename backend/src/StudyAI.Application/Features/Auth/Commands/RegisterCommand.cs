@@ -57,7 +57,7 @@ public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Re
             throw new BadRequestException("CAPTCHA đã hết hạn. Vui lòng lấy mã CAPTCHA mới.");
         }
 
-        var captchaHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(command.Request.CaptchaAnswer.Trim())));
+        var captchaHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(command.Request.CaptchaAnswer.Trim().ToUpperInvariant())));
         if (!CryptographicOperations.FixedTimeEquals(Convert.FromBase64String(captcha.AnswerHash), Convert.FromBase64String(captchaHash)))
         {
             throw new BadRequestException("CAPTCHA không chính xác.");

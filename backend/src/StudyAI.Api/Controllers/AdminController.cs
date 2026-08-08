@@ -50,6 +50,18 @@ public sealed class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("users/{userId:guid}")]
+    public async Task<IActionResult> PermanentlyDeleteUser(Guid userId, CancellationToken cancellationToken)
+    {
+        if (userId == GetUserId())
+        {
+            return BadRequest(new { detail = "An administrator cannot permanently delete their own account." });
+        }
+
+        await _sender.Send(new PermanentlyDeleteUserCommand(userId), cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("documents/{documentId:guid}/download")]
     public async Task<IActionResult> DownloadDocument(Guid documentId, CancellationToken cancellationToken)
     {

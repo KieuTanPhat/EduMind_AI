@@ -11,7 +11,7 @@ export type AuthResponse = {
 }
 
 export type RegisterResponse = { userId: string; email: string; requiresEmailVerification: boolean; otpExpiresAtUtc: string; developmentOtp?: string }
-export type Captcha = { id: string; question: string; expiresAtUtc: string }
+export type Captcha = { id: string; imageDataUrl: string; expiresAtUtc: string }
 
 export type CurrentUser = Pick<AuthResponse, 'userId' | 'email' | 'firstName' | 'lastName' | 'roles'> & { isEmailVerified?: boolean; isPlus?: boolean; plusExpiresAtUtc?: string }
 

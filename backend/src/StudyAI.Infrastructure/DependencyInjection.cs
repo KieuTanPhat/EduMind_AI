@@ -40,9 +40,11 @@ public static class DependencyInjection
         {
             options.FrontendBaseUrl = configuration["EMAIL_FRONTEND_BASE_URL"] ?? options.FrontendBaseUrl;
             options.SmtpHost = configuration["EMAIL_SMTP_HOST"] ?? options.SmtpHost;
+            if (int.TryParse(configuration["EMAIL_SMTP_PORT"], out var smtpPort)) options.SmtpPort = smtpPort;
             options.Username = configuration["EMAIL_SMTP_USERNAME"] ?? options.Username;
             options.Password = configuration["EMAIL_SMTP_PASSWORD"] ?? options.Password;
             options.FromAddress = configuration["EMAIL_FROM_ADDRESS"] ?? options.FromAddress;
+            if (bool.TryParse(configuration["EMAIL_SMTP_USE_SSL"], out var useSsl)) options.UseSsl = useSsl;
         });
         services.AddSingleton<IEmailService, SmtpEmailService>();
         var storageProvider = configuration["Storage:Provider"] ?? "Local";

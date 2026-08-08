@@ -27,7 +27,7 @@ public sealed record AuthResponse(
 
 public sealed record RegisterResponse(Guid UserId, string Email, bool RequiresEmailVerification, DateTime OtpExpiresAtUtc, string? DevelopmentOtp);
 
-public sealed record CaptchaResponse(Guid Id, string Question, DateTime ExpiresAtUtc);
+public sealed record CaptchaResponse(Guid Id, string ImageDataUrl, DateTime ExpiresAtUtc);
 
 public sealed record VerifyEmailOtpRequest(string Email, string Code);
 
