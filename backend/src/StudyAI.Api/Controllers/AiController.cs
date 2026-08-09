@@ -44,7 +44,7 @@ public sealed class AiController : ControllerBase
 
     [HttpPost("api/documents/{documentId:guid}/quiz")]
     public async Task<ActionResult<QuizResponse>> GenerateQuiz(Guid documentId, GenerateAiRequest request, CancellationToken cancellationToken)
-        => Ok(await _sender.Send(new GenerateQuizCommand(GetUserId(), documentId, request.ForceRegenerate), cancellationToken));
+        => Ok(await _sender.Send(new GenerateQuizCommand(GetUserId(), documentId, request.ForceRegenerate, request.QuestionCount), cancellationToken));
 
     [HttpGet("api/documents/{documentId:guid}/quiz")]
     public async Task<ActionResult<QuizResponse>> GetQuiz(Guid documentId, CancellationToken cancellationToken)
@@ -69,6 +69,10 @@ public sealed class AiController : ControllerBase
     [HttpGet("api/chat/sessions/{sessionId:guid}/messages")]
     public async Task<ActionResult<IReadOnlyCollection<ChatMessageResponse>>> GetChatMessages(Guid sessionId, CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetChatMessagesQuery(GetUserId(), sessionId), cancellationToken));
+
+    [HttpPost("api/documents/{documentId:guid}/cv-score")]
+    public async Task<ActionResult<CvScoreResponse>> ScoreCv(Guid documentId, CvScoreRequest request, CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new GenerateCvScoreCommand(GetUserId(), documentId, request.TargetRole, request.ExperienceLevel, request.JobDescription), cancellationToken));
 
     private Guid GetUserId()
     {

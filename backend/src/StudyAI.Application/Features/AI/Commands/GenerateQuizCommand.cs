@@ -2,13 +2,14 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
+using StudyAI.Application.Common;
 using StudyAI.Application.Common.Exceptions;
 using StudyAI.Contracts.AI;
 using StudyAI.Domain.Entities;
 
 namespace StudyAI.Application.Features.AI.Commands;
 
-public sealed record GenerateQuizCommand(Guid UserId, Guid DocumentId, bool ForceRegenerate) : IRequest<QuizResponse>;
+public sealed record GenerateQuizCommand(Guid UserId, Guid DocumentId, bool ForceRegenerate, int? QuestionCount) : IRequest<QuizResponse>;
 
 public sealed class GenerateQuizCommandHandler : IRequestHandler<GenerateQuizCommand, QuizResponse>
 {
@@ -25,9 +26,20 @@ public sealed class GenerateQuizCommandHandler : IRequestHandler<GenerateQuizCom
 
     public async Task<QuizResponse> Handle(GenerateQuizCommand command, CancellationToken cancellationToken)
     {
+        var questionCount = command.QuestionCount ?? 5;
+        if (questionCount is not (5 or 10 or 20))
+        {
+            throw new BadRequestException("Quiz question count must be 5, 10, or 20.");
+        }
+
         var document = await _db.Documents.SingleOrDefaultAsync(x => x.Id == command.DocumentId && x.UserId == command.UserId, cancellationToken)
             ?? throw new NotFoundException("Document was not found.");
         EnsureProcessed(document);
+
+        if (questionCount == 20)
+        {
+            await EntitlementPolicy.EnsurePlusAsync(_db, command.UserId, "Quiz 20 câu", cancellationToken);
+        }
 
         var existing = await _db.Quizzes.Include(x => x.Questions).ThenInclude(x => x.Options)
             .Where(x => x.DocumentId == document.Id).OrderByDescending(x => x.CreatedAtUtc).FirstOrDefaultAsync(cancellationToken);
@@ -36,10 +48,12 @@ public sealed class GenerateQuizCommandHandler : IRequestHandler<GenerateQuizCom
             return Map(existing);
         }
 
+        await EntitlementPolicy.EnsureDailyAiTokenAllowanceAsync(_db, command.UserId, cancellationToken);
+
         var preference = await _db.UserPreferences.AsNoTracking()
             .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
         var result = await _aiService.GenerateAsync(
-            new AiGenerationRequest("quiz", BuildContext(document.ExtractedText!), AiPromptTemplates.WithPreferences(AiPromptTemplates.Quiz, preference), true),
+            new AiGenerationRequest("quiz", BuildContext(document.ExtractedText!), AiPromptTemplates.WithPreferences(AiPromptTemplates.QuizForCount(questionCount), preference), true),
             cancellationToken);
         using var json = AiJsonHelpers.Parse(result.Text);
         var title = AiJsonHelpers.RequiredString(json.RootElement, "title", 500);
@@ -54,7 +68,7 @@ public sealed class GenerateQuizCommandHandler : IRequestHandler<GenerateQuizCom
         }
 
         var quiz = new Quiz(document.Id, title, result.Model);
-        foreach (var questionElement in questionsElement.EnumerateArray().Take(20))
+        foreach (var questionElement in questionsElement.EnumerateArray().Take(questionCount))
         {
             if (!questionElement.TryGetProperty("options", out var optionsElement) || optionsElement.ValueKind != JsonValueKind.Array)
             {
@@ -78,9 +92,9 @@ public sealed class GenerateQuizCommandHandler : IRequestHandler<GenerateQuizCom
             quiz.Questions.Add(question);
         }
 
-        if (quiz.Questions.Count == 0)
+        if (quiz.Questions.Count != questionCount)
         {
-            throw new BadRequestException("AI did not return any quiz questions.");
+            throw new BadRequestException($"AI did not return exactly {questionCount} quiz questions. Please try again.");
         }
 
         _db.Quizzes.Add(quiz);

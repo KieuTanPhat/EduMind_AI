@@ -7,7 +7,7 @@ public sealed class Document : Entity
 {
     private Document() { }
 
-    public Document(Guid userId, string originalFileName, string storedFileName, string storagePath, DocumentFileType fileType, long fileSizeBytes)
+    public Document(Guid userId, string originalFileName, string storedFileName, string storagePath, DocumentFileType fileType, long fileSizeBytes, string? contentHash = null)
     {
         UserId = userId;
         OriginalFileName = originalFileName;
@@ -15,6 +15,7 @@ public sealed class Document : Entity
         StoragePath = storagePath;
         FileType = fileType;
         FileSizeBytes = fileSizeBytes;
+        ContentHash = contentHash;
     }
 
     public Guid UserId { get; private set; }
@@ -31,11 +32,15 @@ public sealed class Document : Entity
 
     public long FileSizeBytes { get; private set; }
 
+    public string? ContentHash { get; private set; }
+
     public DocumentStatus Status { get; private set; } = DocumentStatus.Uploaded;
 
     public string? ExtractedText { get; private set; }
 
     public string? ProcessingError { get; private set; }
+
+    public void SetContentHash(string contentHash) => ContentHash = contentHash;
 
     public User User { get; private set; } = null!;
 

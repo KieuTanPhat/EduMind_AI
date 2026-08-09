@@ -10,5 +10,5 @@ public sealed class GetSupportTicketsQueryHandler : IRequestHandler<GetSupportTi
 {
     private readonly IApplicationDbContext _db;
     public GetSupportTicketsQueryHandler(IApplicationDbContext db) => _db = db;
-    public async Task<IReadOnlyCollection<SupportTicketResponse>> Handle(GetSupportTicketsQuery query, CancellationToken cancellationToken) => await _db.SupportTickets.AsNoTracking().OrderByDescending(x => x.CreatedAtUtc).Take(100).Select(x => new SupportTicketResponse(x.Id, x.Subject, x.Message, x.Status, x.AdminReply, x.CreatedAtUtc, x.ResolvedAtUtc)).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<SupportTicketResponse>> Handle(GetSupportTicketsQuery query, CancellationToken cancellationToken) => await _db.SupportTickets.AsNoTracking().OrderByDescending(x => x.CreatedAtUtc).Take(200).Select(x => new SupportTicketResponse(x.Id, x.Subject, x.Message, x.Status, x.AdminReply, x.CreatedAtUtc, x.ResolvedAtUtc, x.User.Email, x.User.FirstName + " " + x.User.LastName, x.UserId)).ToListAsync(cancellationToken);
 }

@@ -19,7 +19,8 @@ public sealed class ProcessPlusRequestCommandHandler : IRequestHandler<ProcessPl
         if (command.Approve)
         {
             var expires = command.DurationDays is > 0 ? now.AddDays(command.DurationDays.Value) : (DateTime?)null;
-            request.User.GrantPlus(now, expires);
+            if (string.Equals(request.Plan, "Pro", StringComparison.OrdinalIgnoreCase)) request.User.GrantPro(now, expires);
+            else request.User.GrantPlus(now, expires);
             request.Approve(command.AdminUserId, now, command.Note);
         }
         else request.Reject(command.AdminUserId, now, command.Note);

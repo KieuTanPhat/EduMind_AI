@@ -50,6 +50,27 @@ public sealed class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("users/{userId:guid}/pro")]
+    public async Task<IActionResult> GrantPro(Guid userId, GrantPlusUserRequest request, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new GrantProToUserCommand(userId, request.DurationDays), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("users/{userId:guid}/quota")]
+    public async Task<IActionResult> SetAiQuota(Guid userId, SetAiQuotaRequest request, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new SetAiQuotaCommand(userId, request.TokenLimitPerDay), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("users/{userId:guid}/plan")]
+    public async Task<IActionResult> SetUserPlan(Guid userId, SetUserPlanRequest request, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new SetUserPlanCommand(userId, request), cancellationToken);
+        return NoContent();
+    }
+
     [HttpDelete("users/{userId:guid}")]
     public async Task<IActionResult> PermanentlyDeleteUser(Guid userId, CancellationToken cancellationToken)
     {
@@ -73,6 +94,13 @@ public sealed class AdminController : ControllerBase
     public async Task<ActionResult<PagedResponse<AdminDocumentResponse>>> GetDocuments([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
         => Ok(await _sender.Send(new GetAdminDocumentsQuery(search, page, pageSize), cancellationToken));
 
+    [HttpDelete("documents/{documentId:guid}")]
+    public async Task<IActionResult> DeleteDocument(Guid documentId, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new DeleteAdminDocumentCommand(documentId), cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("ai-usage")]
     public async Task<ActionResult<IReadOnlyCollection<AiUsageSummaryResponse>>> GetAiUsage(CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetAiUsageQuery(), cancellationToken));
@@ -80,6 +108,14 @@ public sealed class AdminController : ControllerBase
     [HttpGet("statistics")]
     public async Task<ActionResult<AdminStatsResponse>> GetStatistics(CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetAdminStatsQuery(), cancellationToken));
+
+    [HttpGet("plan-policies")]
+    public async Task<ActionResult<IReadOnlyCollection<PlanPolicyResponse>>> GetPlanPolicies(CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new GetPlanPoliciesQuery(), cancellationToken));
+
+    [HttpPut("plan-policies/{plan}")]
+    public async Task<ActionResult<PlanPolicyResponse>> UpdatePlanPolicy(string plan, UpdatePlanPolicyRequest request, CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new UpdatePlanPolicyCommand(plan, request), cancellationToken));
 
     [HttpGet("plus-requests")]
     public async Task<ActionResult<IReadOnlyCollection<PlusRequestAdminResponse>>> GetPlusRequests(CancellationToken cancellationToken)
@@ -100,6 +136,13 @@ public sealed class AdminController : ControllerBase
     public async Task<IActionResult> ResolveSupportTicket(Guid ticketId, [FromBody] string reply, CancellationToken cancellationToken)
     {
         await _sender.Send(new ResolveSupportTicketCommand(ticketId, reply), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("support-users/{userId:guid}/read")]
+    public async Task<IActionResult> MarkSupportRead(Guid userId, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new MarkSupportTicketsReadCommand(userId), cancellationToken);
         return NoContent();
     }
 

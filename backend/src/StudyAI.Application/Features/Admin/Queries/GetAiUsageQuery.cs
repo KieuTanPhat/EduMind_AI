@@ -14,5 +14,11 @@ public sealed class GetAiUsageQueryHandler : IRequestHandler<GetAiUsageQuery, IR
     public GetAiUsageQueryHandler(IApplicationDbContext db) => _db = db;
 
     public async Task<IReadOnlyCollection<AiUsageSummaryResponse>> Handle(GetAiUsageQuery query, CancellationToken cancellationToken)
-        => await _db.AiUsageLogs.GroupBy(x => x.Operation).Select(x => new AiUsageSummaryResponse(x.Key, x.Count(), x.Sum(item => item.InputTokens), x.Sum(item => item.OutputTokens))).OrderByDescending(x => x.RequestCount).ToArrayAsync(cancellationToken);
+    {
+        var logs = await _db.AiUsageLogs.AsNoTracking().ToListAsync(cancellationToken);
+        return logs.GroupBy(x => x.Operation)
+            .Select(group => new AiUsageSummaryResponse(group.Key, group.Count(), group.Sum(x => x.InputTokens), group.Sum(x => x.OutputTokens)))
+            .OrderByDescending(x => x.RequestCount)
+            .ToArray();
+    }
 }

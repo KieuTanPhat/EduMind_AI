@@ -72,27 +72,27 @@ public sealed class RegisterCommandHandler : IRequestHandler<RegisterCommand, Re
             throw new ConflictException("An account with this email already exists.");
         }
 
-        var userRole = await _db.Roles.SingleOrDefaultAsync(x => x.NormalizedName == "USER", cancellationToken)
-            ?? throw new InvalidOperationException("The default User role has not been seeded.");
+        var existingPending = await _db.PendingRegistrations.SingleOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail, cancellationToken);
+        if (existingPending is not null)
+        {
+            _db.PendingRegistrations.Remove(existingPending);
+        }
 
-        var user = new User(
+        var verificationToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var verificationTokenHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(verificationToken)));
+        var verificationExpiresAtUtc = DateTime.UtcNow.AddHours(24);
+        var pending = new PendingRegistration(
             email,
             normalizedEmail,
             _passwordHasher.Hash(command.Request.Password),
             command.Request.FirstName.Trim(),
-            command.Request.LastName.Trim());
-
-        user.UserRoles.Add(new UserRole(user.Id, userRole.Id));
-        user.SetPreference(new UserPreference(user.Id));
-        _db.Users.Add(user);
-
-        var otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
-        var otpHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(otp)));
-        var otpExpiresAtUtc = DateTime.UtcNow.AddMinutes(10);
-        _db.EmailVerificationOtps.Add(new EmailVerificationOtp(user.Id, otpHash, otpExpiresAtUtc));
+            command.Request.LastName.Trim(),
+            verificationTokenHash,
+            verificationExpiresAtUtc);
+        _db.PendingRegistrations.Add(pending);
         await _db.SaveChangesAsync(cancellationToken);
 
-        var developmentOtp = await _emailService.SendEmailVerificationOtpAsync(user.Email, $"{user.FirstName} {user.LastName}".Trim(), otp, cancellationToken);
-        return new RegisterResponse(user.Id, user.Email, true, otpExpiresAtUtc, developmentOtp);
+        await _emailService.SendEmailVerificationAsync(pending.Email, $"{pending.FirstName} {pending.LastName}".Trim(), verificationToken, cancellationToken);
+        return new RegisterResponse(pending.Id, pending.Email, true, verificationExpiresAtUtc);
     }
 }

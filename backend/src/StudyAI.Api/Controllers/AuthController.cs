@@ -32,16 +32,9 @@ public sealed class AuthController : ControllerBase
     public async Task<ActionResult<CaptchaResponse>> GetCaptcha(CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetCaptchaQuery(), cancellationToken));
 
-    [HttpPost("verify-otp")]
-    public async Task<IActionResult> VerifyOtp(VerifyEmailOtpRequest request, CancellationToken cancellationToken)
-    {
-        await _sender.Send(new VerifyEmailOtpCommand(request), cancellationToken);
-        return Ok(new { message = "Email verified successfully." });
-    }
-
-    [HttpPost("resend-otp")]
-    public async Task<ActionResult<ResendOtpResponse>> ResendOtp(ResendEmailOtpRequest request, CancellationToken cancellationToken)
-        => Ok(await _sender.Send(new ResendEmailOtpCommand(request), cancellationToken));
+    [HttpPost("resend-verification")]
+    public async Task<ActionResult<ResendVerificationResponse>> ResendVerification(ResendEmailVerificationRequest request, CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new ResendEmailVerificationCommand(request), cancellationToken));
 
     [HttpGet("verify-email")]
     public async Task<IActionResult> VerifyEmail([FromQuery] string token, CancellationToken cancellationToken)

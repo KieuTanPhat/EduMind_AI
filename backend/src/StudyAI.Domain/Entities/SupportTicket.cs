@@ -29,4 +29,21 @@ public sealed class SupportTicket : Entity
         ResolvedAtUtc = utcNow;
         Touch(utcNow);
     }
+
+    public void Reply(DateTime utcNow, string reply)
+    {
+        AdminReply = string.IsNullOrWhiteSpace(AdminReply) ? reply : $"{AdminReply}\n{reply}";
+        Status = "Answered";
+        ResolvedAtUtc = null;
+        Touch(utcNow);
+    }
+
+    public void MarkRead(DateTime utcNow)
+    {
+        if (Status == "Open")
+        {
+            Status = "Read";
+            Touch(utcNow);
+        }
+    }
 }

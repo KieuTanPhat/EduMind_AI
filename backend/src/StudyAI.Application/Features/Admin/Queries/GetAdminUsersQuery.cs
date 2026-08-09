@@ -27,8 +27,17 @@ public sealed class GetAdminUsersQueryHandler : IRequestHandler<GetAdminUsersQue
 
         var total = await users.CountAsync(cancellationToken);
         var items = await users.OrderByDescending(x => x.CreatedAtUtc).Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(x => new AdminUserResponse(x.Id, x.Email, x.FirstName, x.LastName, x.IsActive, x.IsPlus, x.PlusExpiresAtUtc, x.UserRoles.Select(role => role.Role.Name).ToArray(), x.CreatedAtUtc))
+            .Select(x => new AdminUserResponse(x.Id, x.Email, x.FirstName, x.LastName, x.IsActive, x.IsPlus, x.Plan, x.PlusExpiresAtUtc, x.AiTokenLimitPerDay, 0, x.UserRoles.Select(role => role.Role.Name).ToArray(), x.CreatedAtUtc))
             .ToListAsync(cancellationToken);
+        var userIds = items.Select(x => x.Id).ToArray();
+        var startOfDay = DateTime.UtcNow.Date;
+        var usageLogs = await _db.AiUsageLogs.AsNoTracking()
+            .Where(x => userIds.Contains(x.UserId) && x.CreatedAtUtc >= startOfDay)
+            .Select(x => new { x.UserId, x.InputTokens, x.OutputTokens })
+            .ToListAsync(cancellationToken);
+        var usage = usageLogs.GroupBy(x => x.UserId)
+            .ToDictionary(group => group.Key, group => group.Sum(x => (long)x.InputTokens + x.OutputTokens));
+        items = items.Select(x => x with { AiTokensUsedToday = usage.GetValueOrDefault(x.Id) }).ToList();
         return new PagedResponse<AdminUserResponse>(items, page, pageSize, total, (int)Math.Ceiling(total / (double)pageSize));
     }
 }

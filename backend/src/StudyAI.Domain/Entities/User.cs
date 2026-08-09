@@ -31,6 +31,10 @@ public sealed class User : Entity
 
     public bool IsPlus { get; private set; }
 
+    public string Plan { get; private set; } = "Free";
+
+    public long? AiTokenLimitPerDay { get; private set; }
+
     public DateTime? PlusGrantedAtUtc { get; private set; }
 
     public DateTime? PlusExpiresAtUtc { get; private set; }
@@ -77,11 +81,44 @@ public sealed class User : Entity
 
     public bool HasActivePlus(DateTime utcNow) => IsPlus && (!PlusExpiresAtUtc.HasValue || PlusExpiresAtUtc.Value > utcNow);
 
+    public bool IsPro => string.Equals(Plan, "Pro", StringComparison.OrdinalIgnoreCase);
+
     public void GrantPlus(DateTime utcNow, DateTime? expiresAtUtc = null)
     {
         IsPlus = true;
+        Plan = "Plus";
         PlusGrantedAtUtc = utcNow;
         PlusExpiresAtUtc = expiresAtUtc;
         Touch(utcNow);
+    }
+
+    public void GrantPro(DateTime utcNow, DateTime? expiresAtUtc = null)
+    {
+        IsPlus = true;
+        Plan = "Pro";
+        PlusGrantedAtUtc = utcNow;
+        PlusExpiresAtUtc = expiresAtUtc;
+        Touch(utcNow);
+    }
+
+    public void SetPlan(string plan, DateTime utcNow, DateTime? expiresAtUtc = null)
+    {
+        if (plan is not ("Free" or "Plus" or "Pro")) throw new ArgumentException("Unsupported plan.", nameof(plan));
+        Plan = plan;
+        IsPlus = plan is "Plus" or "Pro";
+        PlusGrantedAtUtc = IsPlus ? utcNow : null;
+        PlusExpiresAtUtc = IsPlus ? expiresAtUtc : null;
+        Touch(utcNow);
+    }
+
+    public void SetAiTokenLimitPerDay(long? limit)
+    {
+        if (limit is < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
+        AiTokenLimitPerDay = limit;
+        Touch(DateTime.UtcNow);
     }
 }

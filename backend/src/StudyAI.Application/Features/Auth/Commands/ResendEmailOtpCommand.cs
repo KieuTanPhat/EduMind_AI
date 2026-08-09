@@ -10,49 +10,47 @@ using StudyAI.Domain.Entities;
 
 namespace StudyAI.Application.Features.Auth.Commands;
 
-public sealed record ResendEmailOtpCommand(ResendEmailOtpRequest Request) : IRequest<ResendOtpResponse>;
+public sealed record ResendEmailVerificationCommand(ResendEmailVerificationRequest Request) : IRequest<ResendVerificationResponse>;
 
-public sealed record ResendOtpResponse(DateTime OtpExpiresAtUtc, string? DevelopmentOtp);
+public sealed record ResendVerificationResponse(DateTime VerificationExpiresAtUtc);
 
-public sealed class ResendEmailOtpCommandValidator : AbstractValidator<ResendEmailOtpCommand>
+public sealed class ResendEmailVerificationCommandValidator : AbstractValidator<ResendEmailVerificationCommand>
 {
-    public ResendEmailOtpCommandValidator() => RuleFor(x => x.Request.Email).NotEmpty().EmailAddress();
+    public ResendEmailVerificationCommandValidator() => RuleFor(x => x.Request.Email).NotEmpty().EmailAddress();
 }
 
-public sealed class ResendEmailOtpCommandHandler : IRequestHandler<ResendEmailOtpCommand, ResendOtpResponse>
+public sealed class ResendEmailVerificationCommandHandler : IRequestHandler<ResendEmailVerificationCommand, ResendVerificationResponse>
 {
     private readonly IApplicationDbContext _db;
     private readonly IEmailService _emailService;
 
-    public ResendEmailOtpCommandHandler(IApplicationDbContext db, IEmailService emailService)
+    public ResendEmailVerificationCommandHandler(IApplicationDbContext db, IEmailService emailService)
     {
         _db = db;
         _emailService = emailService;
     }
 
-    public async Task<ResendOtpResponse> Handle(ResendEmailOtpCommand command, CancellationToken cancellationToken)
+    public async Task<ResendVerificationResponse> Handle(ResendEmailVerificationCommand command, CancellationToken cancellationToken)
     {
         var email = command.Request.Email.Trim().ToUpperInvariant();
-        var user = await _db.Users.SingleOrDefaultAsync(x => x.NormalizedEmail == email, cancellationToken)
-            ?? throw new NotFoundException("Không tìm thấy tài khoản.");
-        if (user.IsEmailVerified)
-        {
-            throw new BadRequestException("Email này đã được xác nhận.");
-        }
+        var pending = await _db.PendingRegistrations.SingleOrDefaultAsync(x => x.NormalizedEmail == email, cancellationToken)
+            ?? throw new NotFoundException("Không tìm thấy yêu cầu đăng ký đang chờ xác nhận.");
 
-        var lastOtp = await _db.EmailVerificationOtps.Where(x => x.UserId == user.Id)
+        var lastToken = await _db.PendingRegistrations.Where(x => x.NormalizedEmail == email)
             .OrderByDescending(x => x.CreatedAtUtc)
             .FirstOrDefaultAsync(cancellationToken);
-        if (lastOtp is not null && lastOtp.CreatedAtUtc > DateTime.UtcNow.AddSeconds(-60))
+        if (lastToken is not null && lastToken.CreatedAtUtc > DateTime.UtcNow.AddSeconds(-60))
         {
-            throw new BadRequestException("Vui lòng đợi 60 giây trước khi gửi lại OTP.");
+            throw new BadRequestException("Vui lòng đợi 60 giây trước khi gửi lại email.");
         }
 
-        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
-        var expiresAtUtc = DateTime.UtcNow.AddMinutes(10);
-        _db.EmailVerificationOtps.Add(new EmailVerificationOtp(user.Id, Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(code))), expiresAtUtc));
+        var verificationToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var expiresAtUtc = DateTime.UtcNow.AddHours(24);
+        var tokenHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(verificationToken)));
+        _db.PendingRegistrations.Remove(pending);
+        _db.PendingRegistrations.Add(new PendingRegistration(pending.Email, pending.NormalizedEmail, pending.PasswordHash, pending.FirstName, pending.LastName, tokenHash, expiresAtUtc));
         await _db.SaveChangesAsync(cancellationToken);
-        var developmentOtp = await _emailService.SendEmailVerificationOtpAsync(user.Email, $"{user.FirstName} {user.LastName}".Trim(), code, cancellationToken);
-        return new ResendOtpResponse(expiresAtUtc, developmentOtp);
+        await _emailService.SendEmailVerificationAsync(pending.Email, $"{pending.FirstName} {pending.LastName}".Trim(), verificationToken, cancellationToken);
+        return new ResendVerificationResponse(expiresAtUtc);
     }
 }

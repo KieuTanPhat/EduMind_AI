@@ -10,10 +10,11 @@ export type AuthResponse = {
   refreshTokenExpiresAtUtc: string
 }
 
-export type RegisterResponse = { userId: string; email: string; requiresEmailVerification: boolean; otpExpiresAtUtc: string; developmentOtp?: string }
+export type RegisterResponse = { registrationId: string; email: string; requiresEmailVerification: boolean; verificationExpiresAtUtc: string }
 export type Captcha = { id: string; imageDataUrl: string; expiresAtUtc: string }
 
-export type CurrentUser = Pick<AuthResponse, 'userId' | 'email' | 'firstName' | 'lastName' | 'roles'> & { isEmailVerified?: boolean; isPlus?: boolean; plusExpiresAtUtc?: string }
+export type CurrentUser = Pick<AuthResponse, 'userId' | 'email' | 'firstName' | 'lastName' | 'roles'> & { isEmailVerified?: boolean; isPlus?: boolean; plan?: string; plusExpiresAtUtc?: string }
+export type PaymentOrder = { id: string; amountVnd: number; transferContent: string; status: string; createdAtUtc: string; plan: string; expiresAtUtc?: string; paidAtUtc?: string }
 
 export type DocumentItem = {
   id: string
@@ -80,16 +81,47 @@ export type QuizResult = {
   completedAtUtc: string
 }
 
+export type CvScoreCategory = {
+  name: string
+  maxScore: number
+  score: number
+  level: string
+  reason: string
+  evidenceFound: string[]
+  evidenceMissing: string[]
+}
+
+export type CvScore = {
+  documentId: string
+  fileName: string
+  targetRole: string
+  experienceLevel: string
+  totalScore: number
+  grade: string
+  summary: string
+  categories: CvScoreCategory[]
+  strengths: string[]
+  weaknesses: string[]
+  recommendations: string[]
+  careerReadiness: string[]
+  jobMatch: { score: number; summary: string }
+  warnings: string[]
+  model: string
+  inputTokens: number
+  outputTokens: number
+}
+
 export type Recommendation = { id: string; title: string; description: string; isCompleted: boolean; expiresAtUtc?: string; createdAtUtc: string }
 export type Dashboard = { totalDocuments: number; processedDocuments: number; inProgressDocuments: number; completedQuizzes: number; averageQuizPercentage: number; flashcardsReviewed: number; recentDocuments: { id: string; originalFileName: string; fileType: string; status: string; fileSizeBytes: number; createdAtUtc: string }[]; recommendations: Recommendation[] }
 export type Progress = { totalDocuments: number; completedDocuments: number; totalStudyMinutes: number; averageCompletionPercentage: number; quizAttempts: number; quizAveragePercentage: number; flashcardsReviewed: number; documents: { documentId: string; originalFileName: string; completionPercentage: number; studyMinutes: number; updatedAtUtc: string }[] }
 export type UserPreference = { learningLevel: string; learningGoal: string; preferredLanguage: string }
 export type AdminStats = { totalUsers: number; activeUsers: number; totalDocuments: number; processedDocuments: number; storageBytes: number; aiRequestCount: number; aiInputTokens: number; aiOutputTokens: number }
-export type AdminUser = { id: string; email: string; firstName: string; lastName: string; isActive: boolean; isPlus: boolean; plusExpiresAtUtc?: string; roles: string[]; createdAtUtc: string }
+export type AdminUser = { id: string; email: string; firstName: string; lastName: string; isActive: boolean; isPlus: boolean; plan: string; plusExpiresAtUtc?: string; aiTokenLimitPerDay?: number; aiTokensUsedToday: number; roles: string[]; createdAtUtc: string }
 export type AdminDocument = { id: string; originalFileName: string; ownerEmail: string; fileType: string; status: string; fileSizeBytes: number; createdAtUtc: string }
 export type AiUsageSummary = { operation: string; requestCount: number; inputTokens: number; outputTokens: number }
-export type PlusRequestAdmin = { id: string; userId: string; email: string; fullName: string; amountVnd: number; transferContent: string; status: string; note?: string; createdAtUtc: string }
-export type SupportTicket = { id: string; subject: string; message: string; status: string; adminReply?: string; createdAtUtc: string; resolvedAtUtc?: string }
+export type PlusRequestAdmin = { id: string; userId: string; email: string; fullName: string; amountVnd: number; transferContent: string; status: string; note?: string; createdAtUtc: string; plan?: string }
+export type SupportTicket = { id: string; subject: string; message: string; status: string; adminReply?: string; createdAtUtc: string; resolvedAtUtc?: string; userEmail?: string; userFullName?: string; userId?: string }
+export type PlanPolicy = { plan: string; maxUploadSizeMb: number; dailyDocumentLimit?: number; dailyTokenLimit?: number }
 
 export type ChatSession = { id: string; documentId: string; title: string; createdAtUtc: string }
 export type ChatMessage = { id: string; sessionId: string; role: string; content: string; createdAtUtc: string }

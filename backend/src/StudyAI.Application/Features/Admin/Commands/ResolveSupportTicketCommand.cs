@@ -14,7 +14,7 @@ public sealed class ResolveSupportTicketCommandHandler : IRequestHandler<Resolve
     {
         if (string.IsNullOrWhiteSpace(command.Reply) || command.Reply.Length > 4000) throw new BadRequestException("A reply is required.");
         var ticket = await _db.SupportTickets.SingleOrDefaultAsync(x => x.Id == command.TicketId, cancellationToken) ?? throw new NotFoundException("Support ticket was not found.");
-        ticket.Resolve(DateTime.UtcNow, command.Reply.Trim());
+        ticket.Reply(DateTime.UtcNow, command.Reply.Trim());
         await _db.SaveChangesAsync(cancellationToken);
     }
 }

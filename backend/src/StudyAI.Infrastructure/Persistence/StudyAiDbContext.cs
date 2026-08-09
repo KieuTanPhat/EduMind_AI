@@ -14,6 +14,7 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
     public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
+    public DbSet<PendingRegistration> PendingRegistrations => Set<PendingRegistration>();
     public DbSet<EmailVerificationOtp> EmailVerificationOtps => Set<EmailVerificationOtp>();
     public DbSet<CaptchaChallenge> CaptchaChallenges => Set<CaptchaChallenge>();
     public DbSet<Document> Documents => Set<Document>();
@@ -35,9 +36,11 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
     public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
+    public DbSet<CvScoreSnapshot> CvScoreSnapshots => Set<CvScoreSnapshot>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<PlusRequest> PlusRequests => Set<PlusRequest>();
     public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+    public DbSet<PlanPolicy> PlanPolicies => Set<PlanPolicy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +58,8 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.HasIndex(x => x.NormalizedEmail).IsUnique();
             entity.Property(x => x.IsEmailVerified).HasDefaultValue(false);
             entity.Property(x => x.IsPlus).HasDefaultValue(false);
+            entity.Property(x => x.Plan).HasMaxLength(20).HasDefaultValue("Free");
+            entity.Property(x => x.AiTokenLimitPerDay);
         });
 
         modelBuilder.Entity<EmailVerificationToken>(entity =>
@@ -65,6 +70,21 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.HasIndex(x => x.TokenHash).IsUnique();
             entity.HasIndex(x => new { x.UserId, x.ExpiresAtUtc });
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PendingRegistration>(entity =>
+        {
+            entity.ToTable("PendingRegistrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.NormalizedEmail).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.PasswordHash).HasMaxLength(255).IsRequired();
+            entity.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
+            entity.HasIndex(x => x.NormalizedEmail).IsUnique();
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.HasIndex(x => x.ExpiresAtUtc);
         });
 
         modelBuilder.Entity<EmailVerificationOtp>(entity =>
@@ -148,6 +168,8 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.Property(x => x.OriginalFileName).HasMaxLength(255).IsRequired();
             entity.Property(x => x.StoredFileName).HasMaxLength(255).IsRequired();
             entity.Property(x => x.StoragePath).HasMaxLength(1000).IsRequired();
+            entity.Property(x => x.ContentHash).HasMaxLength(64);
+            entity.HasIndex(x => new { x.UserId, x.ContentHash });
             entity.Property(x => x.ExtractedText).HasColumnType("nvarchar(max)");
             entity.Property(x => x.ProcessingError).HasMaxLength(2000);
             entity.HasIndex(x => new { x.UserId, x.Status });
@@ -327,6 +349,20 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<CvScoreSnapshot>(entity =>
+        {
+            entity.ToTable("CvScoreSnapshots");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TargetRole).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.ExperienceLevel).HasMaxLength(30).IsRequired();
+            entity.Property(x => x.JobDescriptionHash).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.ResponseJson).HasColumnType("nvarchar(max)").IsRequired();
+            entity.Property(x => x.Model).HasMaxLength(100).IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.DocumentId, x.TargetRole, x.ExperienceLevel, x.JobDescriptionHash }).IsUnique();
+            entity.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Document>().WithMany().HasForeignKey(x => x.DocumentId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<AuditLog>(entity =>
         {
             entity.ToTable("AuditLogs");
@@ -341,13 +377,18 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<PlusRequest>(entity =>
         {
             entity.ToTable("PlusRequests");
+            entity.Property(x => x.Plan).HasMaxLength(20).HasDefaultValue("Plus");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
             entity.Property(x => x.AmountVnd).HasPrecision(18, 2);
             entity.Property(x => x.TransferContent).HasMaxLength(300).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(30).IsRequired();
             entity.Property(x => x.Note).HasMaxLength(1000);
+            entity.Property(x => x.SepayTransactionId).HasMaxLength(100);
+            entity.Property(x => x.ExpiresAtUtc);
+            entity.Property(x => x.PaidAtUtc);
             entity.HasIndex(x => new { x.UserId, x.Status, x.CreatedAtUtc });
+            entity.HasIndex(x => x.SepayTransactionId).IsUnique().HasFilter("[SepayTransactionId] IS NOT NULL");
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -361,6 +402,15 @@ public sealed class StudyAiDbContext : DbContext, IApplicationDbContext
             entity.Property(x => x.AdminReply).HasMaxLength(4000);
             entity.HasIndex(x => new { x.UserId, x.Status, x.CreatedAtUtc });
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PlanPolicy>(entity =>
+        {
+            entity.ToTable("PlanPolicies");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Plan).HasMaxLength(20).IsRequired();
+            entity.HasIndex(x => x.Plan).IsUnique();
+            entity.Property(x => x.MaxUploadSizeMb).IsRequired();
         });
     }
 }

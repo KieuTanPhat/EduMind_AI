@@ -4,7 +4,8 @@ public sealed record AiGenerationRequest(
     string Operation,
     string DocumentContext,
     string Prompt,
-    bool StructuredJson);
+    bool StructuredJson,
+    int? MaxOutputTokens = null);
 
 public sealed record AiGenerationResult(
     string Text,

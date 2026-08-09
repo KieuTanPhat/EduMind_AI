@@ -31,6 +31,7 @@ public sealed class SendChatMessageCommandHandler : IRequestHandler<SendChatMess
             throw new BadRequestException("Chat message must contain between 1 and 4000 characters.");
         }
         await EntitlementPolicy.EnsureDailyAiAllowanceAsync(_db, command.UserId, "chat", 5, cancellationToken);
+        await EntitlementPolicy.EnsureDailyAiTokenAllowanceAsync(_db, command.UserId, cancellationToken);
 
         var session = await _db.ChatSessions
             .Include(x => x.Document)

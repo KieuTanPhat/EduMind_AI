@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
+using StudyAI.Application.Common;
 using StudyAI.Application.Common.Exceptions;
 using StudyAI.Contracts.AI;
 
@@ -16,6 +17,7 @@ public sealed class GetMindMapQueryHandler : IRequestHandler<GetMindMapQuery, Mi
 
     public async Task<MindMapResponse> Handle(GetMindMapQuery query, CancellationToken cancellationToken)
     {
+        await EntitlementPolicy.EnsurePlusAsync(_db, query.UserId, "Mind map", cancellationToken);
         var map = await _db.MindMaps.AsNoTracking().Include(x => x.Nodes)
             .Where(x => x.DocumentId == query.DocumentId && x.Document.UserId == query.UserId)
             .SingleOrDefaultAsync(cancellationToken)

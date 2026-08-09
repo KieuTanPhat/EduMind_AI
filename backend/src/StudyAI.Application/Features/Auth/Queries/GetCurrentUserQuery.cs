@@ -25,6 +25,8 @@ public sealed class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQ
             .SingleOrDefaultAsync(x => x.Id == query.UserId && x.IsActive, cancellationToken)
             ?? throw new NotFoundException("User was not found.");
 
+        var hasActivePlus = user.HasActivePlus(DateTime.UtcNow);
+        var currentPlan = hasActivePlus ? user.Plan : "Free";
         return new CurrentUserResponse(
             user.Id,
             user.Email,
@@ -32,7 +34,8 @@ public sealed class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQ
             user.LastName,
             user.UserRoles.Select(x => x.Role.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
             user.IsEmailVerified,
-            user.HasActivePlus(DateTime.UtcNow),
+            hasActivePlus,
+            currentPlan,
             user.PlusExpiresAtUtc);
     }
 }

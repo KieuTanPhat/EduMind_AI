@@ -8,6 +8,7 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, firstName: string, lastName: string, captchaId: string, captchaAnswer: string) => Promise<RegisterResponse>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -24,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!stored) return null
     try {
       const parsed = JSON.parse(stored) as AuthResponse
-      return { userId: parsed.userId, email: parsed.email, firstName: parsed.firstName, lastName: parsed.lastName, roles: parsed.roles }
+      return { userId: parsed.userId, email: parsed.email, firstName: parsed.firstName, lastName: parsed.lastName, roles: parsed.roles, plan: 'Free' }
     } catch {
       return null
     }
@@ -47,6 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async register(email, password, firstName, lastName, captchaId, captchaAnswer) {
       const { data } = await api.post<RegisterResponse>('/auth/register', { email, password, firstName, lastName, captchaId, captchaAnswer })
       return data
+    },
+    async refreshUser() {
+      const current = await api.get<CurrentUser>('/auth/me')
+      setUser(current.data)
     },
     logout() {
       localStorage.removeItem('edumind.accessToken')

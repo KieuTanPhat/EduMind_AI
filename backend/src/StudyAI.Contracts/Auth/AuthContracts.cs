@@ -25,13 +25,11 @@ public sealed record AuthResponse(
     string RefreshToken,
     DateTime RefreshTokenExpiresAtUtc);
 
-public sealed record RegisterResponse(Guid UserId, string Email, bool RequiresEmailVerification, DateTime OtpExpiresAtUtc, string? DevelopmentOtp);
+public sealed record RegisterResponse(Guid RegistrationId, string Email, bool RequiresEmailVerification, DateTime VerificationExpiresAtUtc);
 
 public sealed record CaptchaResponse(Guid Id, string ImageDataUrl, DateTime ExpiresAtUtc);
 
-public sealed record VerifyEmailOtpRequest(string Email, string Code);
-
-public sealed record ResendEmailOtpRequest(string Email);
+public sealed record ResendEmailVerificationRequest(string Email);
 
 public sealed record CurrentUserResponse(
     Guid UserId,
@@ -41,4 +39,5 @@ public sealed record CurrentUserResponse(
     IReadOnlyCollection<string> Roles,
     bool IsEmailVerified,
     bool IsPlus,
+    string Plan,
     DateTime? PlusExpiresAtUtc);

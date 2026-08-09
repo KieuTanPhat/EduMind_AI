@@ -12,6 +12,7 @@ frontend/.env.*
 
 # Secrets and local settings
 **/appsettings.Development.json
+**/appsettings.Production.json
 **/.env
 **/.env.*
 !.env.example
@@ -22,6 +23,10 @@ storage/users/*
 backend/src/StudyAI.Api/storage/
 logs/
 *.log
+
+# Publish artifacts
+somee-publish*/
+**/Properties/PublishProfiles/
 
 # IDE
 .vs/

@@ -18,7 +18,7 @@ public sealed class DocumentsController : ControllerBase
     public DocumentsController(ISender sender) => _sender = sender;
 
     [HttpPost]
-    [RequestSizeLimit(25 * 1024 * 1024)]
+    [RequestSizeLimit(200 * 1024 * 1024)]
     [ProducesResponseType(typeof(UploadDocumentResponse), StatusCodes.Status202Accepted)]
     public async Task<ActionResult<UploadDocumentResponse>> Upload(IFormFile file, CancellationToken cancellationToken)
     {

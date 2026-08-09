@@ -1,6 +1,6 @@
 namespace StudyAI.Contracts.AI;
 
-public sealed record GenerateAiRequest(bool ForceRegenerate = false);
+public sealed record GenerateAiRequest(bool ForceRegenerate = false, int? QuestionCount = null);
 
 public sealed record SummaryResponse(
     Guid Id,
@@ -75,3 +75,46 @@ public sealed record ChatSessionResponse(Guid Id, Guid DocumentId, string Title,
 public sealed record SendChatMessageRequest(string Content);
 
 public sealed record ChatMessageResponse(Guid Id, Guid SessionId, string Role, string Content, DateTime CreatedAtUtc);
+
+public sealed record CvScoreRequest(
+    string TargetRole,
+    string ExperienceLevel,
+    string? JobDescription = null);
+
+public sealed record CvScoreCriterionResponse(
+    string Name,
+    int MaxScore,
+    int Score,
+    string Reason,
+    IReadOnlyCollection<string> EvidenceFound,
+    IReadOnlyCollection<string> EvidenceMissing);
+
+public sealed record CvScoreCategoryResponse(
+    string Name,
+    int MaxScore,
+    int Score,
+    string Level,
+    string Reason,
+    IReadOnlyCollection<string> EvidenceFound,
+    IReadOnlyCollection<string> EvidenceMissing);
+
+public sealed record CvScoreJobMatchResponse(int Score, string Summary);
+
+public sealed record CvScoreResponse(
+    Guid DocumentId,
+    string FileName,
+    string TargetRole,
+    string ExperienceLevel,
+    int TotalScore,
+    string Grade,
+    string Summary,
+    IReadOnlyCollection<CvScoreCategoryResponse> Categories,
+    IReadOnlyCollection<string> Strengths,
+    IReadOnlyCollection<string> Weaknesses,
+    IReadOnlyCollection<string> Recommendations,
+    IReadOnlyCollection<string> CareerReadiness,
+    CvScoreJobMatchResponse JobMatch,
+    IReadOnlyCollection<string> Warnings,
+    string Model,
+    int InputTokens,
+    int OutputTokens);

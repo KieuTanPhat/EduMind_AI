@@ -26,7 +26,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ConflictException => (StatusCodes.Status409Conflict, "Conflict.", exception.Message),
             UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized.", exception.Message),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found.", exception.Message),
-            ExternalServiceException => (StatusCodes.Status503ServiceUnavailable, "AI service unavailable.", exception.Message),
+            ExternalServiceException => (StatusCodes.Status503ServiceUnavailable, "Request unavailable.", "Tạm thời không thể xử lý yêu cầu. Vui lòng thử lại sau."),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.", "The server could not complete the request.")
         };
 

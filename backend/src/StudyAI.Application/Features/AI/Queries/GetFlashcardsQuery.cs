@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudyAI.Application.Abstractions;
+using StudyAI.Application.Common;
 using StudyAI.Application.Common.Exceptions;
 using StudyAI.Contracts.AI;
 
@@ -16,6 +17,7 @@ public sealed class GetFlashcardsQueryHandler : IRequestHandler<GetFlashcardsQue
 
     public async Task<FlashcardsResponse> Handle(GetFlashcardsQuery query, CancellationToken cancellationToken)
     {
+        await EntitlementPolicy.EnsurePlusAsync(_db, query.UserId, "Flashcards", cancellationToken);
         var cards = await _db.Flashcards.AsNoTracking()
             .Where(x => x.DocumentId == query.DocumentId && x.Document.UserId == query.UserId)
             .OrderBy(x => x.CreatedAtUtc)

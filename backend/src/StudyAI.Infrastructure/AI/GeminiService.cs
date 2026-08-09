@@ -43,7 +43,7 @@ public sealed class GeminiService : IAiService
             {
                 responseMimeType = request.StructuredJson ? "application/json" : "text/plain",
                 temperature = request.StructuredJson ? 0.2 : 0.3,
-                maxOutputTokens = _options.MaxOutputTokens
+                maxOutputTokens = request.MaxOutputTokens ?? _options.MaxOutputTokens
             }
         };
 

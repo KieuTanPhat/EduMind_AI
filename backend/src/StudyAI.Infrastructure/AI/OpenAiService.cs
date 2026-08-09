@@ -34,7 +34,7 @@ public sealed class OpenAiService : IAiService
         {
             ["model"] = _options.Model,
             ["messages"] = new[] { new { role = "user", content = prompt } },
-            ["max_completion_tokens"] = _options.MaxOutputTokens
+            ["max_completion_tokens"] = request.MaxOutputTokens ?? _options.MaxOutputTokens
         };
         if (request.StructuredJson)
         {

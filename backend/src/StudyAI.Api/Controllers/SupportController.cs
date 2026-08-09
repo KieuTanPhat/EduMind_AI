@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudyAI.Application.Features.Support.Commands;
+using StudyAI.Application.Features.Support.Queries;
 using StudyAI.Contracts.Support;
 
 namespace StudyAI.Api.Controllers;
@@ -17,6 +18,9 @@ public sealed class SupportController : ControllerBase
 
     [HttpPost("tickets")]
     public async Task<ActionResult<SupportTicketResponse>> Create(CreateSupportTicketRequest request, CancellationToken cancellationToken) => Ok(await _sender.Send(new CreateSupportTicketCommand(GetUserId(), request), cancellationToken));
+
+    [HttpGet("tickets")]
+    public async Task<ActionResult<IReadOnlyCollection<SupportTicketResponse>>> GetMine(CancellationToken cancellationToken) => Ok(await _sender.Send(new GetMySupportTicketsQuery(GetUserId()), cancellationToken));
 
     private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

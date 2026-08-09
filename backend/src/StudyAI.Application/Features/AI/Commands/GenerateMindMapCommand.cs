@@ -37,6 +37,8 @@ public sealed class GenerateMindMapCommandHandler : IRequestHandler<GenerateMind
             return Map(document.MindMap);
         }
 
+        await EntitlementPolicy.EnsureDailyAiTokenAllowanceAsync(_db, command.UserId, cancellationToken);
+
         var preference = await _db.UserPreferences.AsNoTracking()
             .SingleOrDefaultAsync(x => x.UserId == command.UserId, cancellationToken);
         var result = await _aiService.GenerateAsync(

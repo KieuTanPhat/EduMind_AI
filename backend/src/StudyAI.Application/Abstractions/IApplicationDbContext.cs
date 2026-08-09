@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<UserPreference> UserPreferences { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<EmailVerificationToken> EmailVerificationTokens { get; }
+    DbSet<PendingRegistration> PendingRegistrations { get; }
     DbSet<EmailVerificationOtp> EmailVerificationOtps { get; }
     DbSet<CaptchaChallenge> CaptchaChallenges { get; }
     DbSet<Document> Documents { get; }
@@ -32,9 +33,11 @@ public interface IApplicationDbContext
     DbSet<ChatSession> ChatSessions { get; }
     DbSet<ChatMessage> ChatMessages { get; }
     DbSet<AiUsageLog> AiUsageLogs { get; }
+    DbSet<CvScoreSnapshot> CvScoreSnapshots { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<PlusRequest> PlusRequests { get; }
     DbSet<SupportTicket> SupportTickets { get; }
+    DbSet<PlanPolicy> PlanPolicies { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
